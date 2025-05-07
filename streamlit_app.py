@@ -4,8 +4,6 @@ import plotly.express as px
 
 
 df = pd.read_csv("https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/main/DBT.csv")
-
-", encoding="latin1")
 df.columns = ["CUSTOMERNAME", "COUNTRY", "YEAR_ID", "QTR_ID", "TOTALLOSS", "TOTALREVENUE", "PROFIT"]
 
 st.set_page_config(page_title="DBT Dashboard", layout="wide")
