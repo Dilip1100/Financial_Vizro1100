@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Load CSV
+
 df = pd.read_csv("https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/main/DBT.csv", encoding="latin1")
+
 ", encoding="latin1")
 df.columns = ["CUSTOMERNAME", "COUNTRY", "YEAR_ID", "QTR_ID", "TOTALLOSS", "TOTALREVENUE", "PROFIT"]
 
