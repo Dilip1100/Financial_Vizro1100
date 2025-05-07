@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 
 # Load the data
-file_path = 'https://github.com/Dilip1100/Financial_Vizro1100/blob/main/DBT.csv'
+file_path = 'https://github.com/Dilip1100/Financial_Vizro1100/blob/0342b0328b64852877190a60523265bdb9ca4b4a/DBT.csv'
 df = pd.read_csv(file_path, encoding='latin1')
 
 # Ensure correct column names
