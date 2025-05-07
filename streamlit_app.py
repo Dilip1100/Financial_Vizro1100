@@ -3,7 +3,8 @@ import pandas as pd
 import plotly.express as px
 
 # Load CSV
-df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/9831833b3cc135959366cff58edcdbe3d2e1282c/DBT.csv", encoding="latin1")
+df = pd.read_csv("df = pd.read_csv("https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/main/DBT.csv", encoding="latin1")
+", encoding="latin1")
 df.columns = ["CUSTOMERNAME", "COUNTRY", "YEAR_ID", "QTR_ID", "TOTALLOSS", "TOTALREVENUE", "PROFIT"]
 
 st.set_page_config(page_title="DBT Dashboard", layout="wide")
