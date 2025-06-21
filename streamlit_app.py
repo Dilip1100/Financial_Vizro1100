@@ -67,14 +67,25 @@ fig_pie = px.pie(
 )
 
 # Revenue, Loss, and Profit trend line chart
+# Revenue, Loss, and Profit trend line chart by Year and Quarter
 trend_df = (
-    filtered_df.groupby("QTR_ID")[["TOTALREVENUE", "TOTALLOSS", "PROFIT"]].sum().reset_index()
+    filtered_df.groupby(["YEAR_ID", "QTR_ID"])[["TOTALREVENUE", "TOTALLOSS", "PROFIT"]]
+    .sum()
+    .reset_index()
 )
+
+# Create a formatted Period column like "2022-Q1"
+trend_df["Period"] = trend_df["YEAR_ID"].astype(str) + "-Q" + trend_df["QTR_ID"].astype(str)
+
+# Sort chronologically
+trend_df = trend_df.sort_values(by=["YEAR_ID", "QTR_ID"])
+
+# Plot with Period on x-axis
 fig_trend = px.line(
     trend_df,
-    x="YEAR_ID",
+    x="Period",
     y=["TOTALREVENUE", "TOTALLOSS", "PROFIT"],
-    title="Yearly Revenue, Loss, and Profit Trend",
+    title="Quarterly Revenue, Loss, and Profit Trend",
     markers=True,
     template=plotly_template
 )
