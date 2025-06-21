@@ -72,9 +72,9 @@ trend_df = (
 )
 fig_trend = px.line(
     trend_df,
-    x="QTR_ID",
+    x="YEAR_ID",
     y=["TOTALREVENUE", "TOTALLOSS", "PROFIT"],
-    title="Quarterly Revenue, Loss, and Profit Trend",
+    title="Yearly Revenue, Loss, and Profit Trend",
     markers=True,
     template=plotly_template
 )
