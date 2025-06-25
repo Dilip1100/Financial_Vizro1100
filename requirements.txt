@@ -1,3 +1,3 @@
 streamlit
-plotly
 pandas
+plotly
