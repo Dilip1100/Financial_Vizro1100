@@ -44,6 +44,16 @@ if car_makes:
 if car_years:
     filtered_df = filtered_df[filtered_df['Car Year'].astype(str).isin(car_years)]
 
+# ---- Download Filtered Data ----
+st.markdown("### 📥 Download Filtered Data")
+csv = filtered_df.to_csv(index=False).encode("utf-8")
+st.download_button(
+    label="Download CSV",
+    data=csv,
+    file_name="filtered_car_sales.csv",
+    mime="text/csv"
+)
+
 # ---- Bar Chart ----
 st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
 top_salespeople = filtered_df.groupby('Salesperson')[selected_metric].sum().nlargest(10).reset_index()
@@ -53,20 +63,60 @@ bar_fig = px.bar(
 )
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ---- Pie Chart ----
+# ---- Pie Chart with Enhanced Size and 3D Effect ----
 st.subheader(f"🧩 Top 10 Car Makes by {selected_metric}")
 car_make_metric = filtered_df.groupby('Car Make')[selected_metric].sum().nlargest(10).reset_index()
-pie_fig = px.pie(
-    car_make_metric, names='Car Make', values=selected_metric, hole=0.3,
-    template='plotly_dark', color_discrete_sequence=px.colors.sequential.Plasma_r
-)
-st.plotly_chart(pie_fig, use_container_width=True)
+pull_values = [0.1 if i == 0 else 0.05 for i in range(len(car_make_metric))]
 
-# ---- Trend Line Chart ----
+pie_fig = px.pie(
+    car_make_metric,
+    names='Car Make',
+    values=selected_metric,
+    hole=0.3,
+    template='plotly_dark',
+    color_discrete_sequence=px.colors.sequential.Plasma_r
+)
+pie_fig.update_traces(
+    pull=pull_values,
+    rotation=45,
+    textinfo='label+percent',
+    textposition='outside',
+    opacity=0.9
+)
+pie_fig.update_layout(
+    height=600,
+    width=900,
+    showlegend=True,
+    margin=dict(t=50, b=50, l=50, r=50)
+)
+with st.container():
+    st.plotly_chart(pie_fig, use_container_width=False)
+
+# ---- Trend Line with QoQ % Change ----
 st.subheader("📈 Sales and Commission Trend by Quarter")
 trend_df = filtered_df.groupby('Quarter')[['Sale Price', 'Commission Earned']].sum().reset_index()
+
+# Add % change columns
+trend_df['Sale Price QoQ %'] = trend_df['Sale Price'].pct_change().fillna(0) * 100
+trend_df['Commission QoQ %'] = trend_df['Commission Earned'].pct_change().fillna(0) * 100
+
+# Display line chart with markers
 trend_fig = px.line(
-    trend_df, x='Quarter', y=['Sale Price', 'Commission Earned'],
-    markers=True, template='plotly_dark', labels={'value': 'Amount', 'Quarter': 'Quarter'}
+    trend_df,
+    x='Quarter',
+    y=['Sale Price', 'Commission Earned'],
+    markers=True,
+    template='plotly_dark',
+    labels={'value': 'Amount', 'Quarter': 'Quarter'}
 )
 st.plotly_chart(trend_fig, use_container_width=True)
+
+# ---- Show % Change Table (Optional) ----
+with st.expander("🔍 View Quarter-over-Quarter % Change Table"):
+    st.dataframe(
+        trend_df[['Quarter', 'Sale Price QoQ %', 'Commission QoQ %']].style.format({
+            'Sale Price QoQ %': '{:.2f}%',
+            'Commission QoQ %': '{:.2f}%'
+        }),
+        use_container_width=True
+    )
