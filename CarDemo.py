@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 # ---- Load Data ----
 @st.cache_data
@@ -17,7 +18,7 @@ def load_data():
 df = load_data()
 
 # ---- Page Config ----
-st.set_page_config(page_title="Car Retailer Dashboard", layout="wide")
+st.set_page_config(page_title="🚗 Car Retailer Dashboard", layout="wide")
 st.title("🚗 Car Retailer Sales Dashboard")
 
 # ---- Top Filters (Slicers) ----
@@ -47,68 +48,86 @@ if car_years:
 
 # ---- KPI Summary Cards ----
 st.markdown("### 📌 Summary Metrics")
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+k1, k2, k3, k4 = st.columns(4)
 
-with kpi1:
+with k1:
     st.metric("💰 Total Sales", f"${filtered_df['Sale Price'].sum():,.0f}")
-
-with kpi2:
+with k2:
     st.metric("🏆 Total Commission", f"${filtered_df['Commission Earned'].sum():,.0f}")
-
-with kpi3:
+with k3:
     avg_price = filtered_df['Sale Price'].mean() if not filtered_df.empty else 0
     st.metric("📊 Avg Sale Price", f"${avg_price:,.0f}")
-
-with kpi4:
+with k4:
     st.metric("📦 Transactions", f"{filtered_df.shape[0]:,}")
 
 # ---- Download Filtered Data ----
 st.markdown("### 📥 Download Filtered Data")
 csv = filtered_df.to_csv(index=False).encode("utf-8")
-st.download_button(
-    label="Download CSV",
-    data=csv,
-    file_name="filtered_car_sales.csv",
-    mime="text/csv"
+st.download_button("Download CSV", csv, "filtered_car_sales.csv", "text/csv")
+
+# ---- 3D-Style Bar Chart: Top Salespeople ----
+st.subheader(f"📊 Top 10 Salespeople by {selected_metric} (3D Style)")
+top_salespeople = (
+    filtered_df.groupby('Salesperson')[selected_metric]
+    .sum().nlargest(10).reset_index().sort_values(by=selected_metric)
 )
 
-# ---- Bar Chart ----
-st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
-top_salespeople = filtered_df.groupby('Salesperson')[selected_metric].sum().nlargest(10).reset_index()
-bar_fig = px.bar(
-    top_salespeople, y='Salesperson', x=selected_metric, orientation='h',
-    template='plotly_dark', color_discrete_sequence=['#1f77b4']
+bar_fig = go.Figure(data=[
+    go.Bar(
+        x=top_salespeople['Salesperson'],
+        y=top_salespeople[selected_metric],
+        marker=dict(
+            color=top_salespeople[selected_metric],
+            colorscale='Viridis',
+            showscale=True,
+            line=dict(color='gray', width=1.5)
+        ),
+        hovertemplate='<b>%{x}</b><br>' + selected_metric + ': %{y:$,.0f}<extra></extra>',
+    )
+])
+
+bar_fig.update_layout(
+    template="plotly_dark",
+    title=f"Top 10 Salespeople by {selected_metric}",
+    xaxis_title="Salesperson",
+    yaxis_title=selected_metric,
+    margin=dict(l=40, r=20, t=60, b=80),
+    height=600,
+    scene_camera_eye=dict(x=1.5, y=1.5, z=0.8),
 )
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ---- Pie Chart with 3D Style ----
-st.subheader(f"🧩 Top 10 Car Makes by {selected_metric}")
-car_make_metric = filtered_df.groupby('Car Make')[selected_metric].sum().nlargest(10).reset_index()
+# ---- 3D-Style Pie Chart: Top Car Makes ----
+st.subheader(f"🧩 Top 10 Car Makes by {selected_metric} (3D Style)")
+
+car_make_metric = (
+    filtered_df.groupby('Car Make')[selected_metric]
+    .sum().nlargest(10).reset_index()
+)
 pull_values = [0.1 if i == 0 else 0.05 for i in range(len(car_make_metric))]
 
-pie_fig = px.pie(
-    car_make_metric,
-    names='Car Make',
-    values=selected_metric,
-    hole=0.3,
-    template='plotly_dark',
-    color_discrete_sequence=px.colors.sequential.Plasma_r
-)
-pie_fig.update_traces(
-    pull=pull_values,
-    rotation=45,
-    textinfo='label+percent',
-    textposition='outside',
-    opacity=0.9
-)
+pie_fig = go.Figure(data=[
+    go.Pie(
+        labels=car_make_metric['Car Make'],
+        values=car_make_metric[selected_metric],
+        hole=0.2,
+        pull=pull_values,
+        marker=dict(
+            colors=px.colors.sequential.Plasma_r,
+            line=dict(color='white', width=1.5)
+        ),
+        hoverinfo='label+percent+value',
+        textinfo='label+percent',
+    )
+])
+
 pie_fig.update_layout(
+    template="plotly_dark",
+    title=f"Top 10 Car Makes by {selected_metric}",
     height=600,
-    width=900,
-    showlegend=True,
-    margin=dict(t=50, b=50, l=50, r=50)
+    showlegend=True
 )
-with st.container():
-    st.plotly_chart(pie_fig, use_container_width=False)
+st.plotly_chart(pie_fig, use_container_width=False)
 
 # ---- Trend Line with QoQ % Change ----
 st.subheader("📈 Sales and Commission Trend by Quarter")
@@ -132,8 +151,8 @@ with st.expander("🔍 View Quarter-over-Quarter % Change Table"):
         use_container_width=True
     )
 
-# ---- Optional: Monthly Animated Trend ----
-with st.expander("🎞️ View Monthly Animated Trend (Optional)"):
+# ---- Animated Monthly Trend ----
+with st.expander("🎞️ View Monthly Animated Trend"):
     monthly_trend = filtered_df.groupby('Month')[['Sale Price', 'Commission Earned']].sum().reset_index()
     melted = monthly_trend.melt(id_vars='Month', var_name='Metric', value_name='Amount')
 
