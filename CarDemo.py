@@ -6,7 +6,7 @@ import plotly.express as px
 import dash_mantine_components as dmc
 
 # ---- Load Data ----
-df = pd.read_csv('C:/Users/dilip/Downloads/DV2.csv', encoding='latin1')
+df = pd.read_csv('https://github.com/Dilip1100/Financial_Vizro1100/blob/94d364e98061cd58f8b52224f33037aa7ca3ed5f/DV2.csv', encoding='latin1')
 df.columns = [col.strip().replace("ï»¿", "") for col in df.columns]
 df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
 df['Year'] = df['Date'].dt.year
