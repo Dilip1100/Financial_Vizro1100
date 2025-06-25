@@ -19,13 +19,21 @@ df = load_data()
 st.set_page_config(page_title="Car Retailer Dashboard", layout="wide")
 st.title("🚗 Car Retailer Sales Dashboard")
 
-# ---- Sidebar Filters ----
-with st.sidebar:
-    st.header("🔍 Filters")
-    salespeople = st.multiselect("Salesperson", sorted(df['Salesperson'].dropna().unique()))
-    car_makes = st.multiselect("Car Make", sorted(df['Car Make'].dropna().unique()))
-    car_years = st.multiselect("Car Year", sorted(df['Car Year'].dropna().unique()))
-    selected_metric = st.radio("Metric", ["Sale Price", "Commission Earned"], index=0)
+# ---- Top Filters (Slicers) ----
+with st.container():
+    col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
+    
+    with col1:
+        salespeople = st.multiselect("Salesperson", sorted(df['Salesperson'].dropna().unique()))
+    
+    with col2:
+        car_makes = st.multiselect("Car Make", sorted(df['Car Make'].dropna().unique()))
+    
+    with col3:
+        car_years = st.multiselect("Car Year", sorted(df['Car Year'].dropna().unique()))
+    
+    with col4:
+        selected_metric = st.radio("Metric", ["Sale Price", "Commission Earned"], index=0, horizontal=True)
 
 # ---- Filter Data ----
 filtered_df = df.copy()
