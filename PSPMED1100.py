@@ -40,26 +40,30 @@ st.markdown("""
 # ----------------- Load Data -----------------
 @st.cache_data
 def load_data():
-    # Load data from the attached CSV file
-    # Added on_bad_lines='skip' to handle rows with too many columns, which were causing ParserErrors.
-    df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
+    # Load data from the attached CSV file, skipping bad lines
+    df = pd.read_csv("PMC Hospital Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
 
-    # Clean column names by stripping whitespace and replacing special characters
-    df.columns = [col.strip().replace("ï»¿", "").replace(" :", "").replace(" (Hospital / Nursing Home / Lab)", "").replace(" (Public / Private)", "").strip() for col in df.columns]
+    # Step 1: Strip leading/trailing whitespace from all column names
+    df.columns = df.columns.str.strip()
 
-    # Rename columns for easier access and display
-    df = df.rename(columns={
-        'Type': 'Facility Type',
-        'Class': 'Class (Public/Private)',
+    # Step 2: Define a dictionary for renaming columns
+    # Keys are the exact column names after stripping, values are the desired new names
+    rename_mapping = {
+        'Type (Hospital / Nursing Home / Lab)': 'Facility Type',
+        'Class : (Public / Private)': 'Class (Public/Private)',
+        'Pharmacy Available : Yes/No': 'Pharmacy Available',
         'Number of Beds in facility type': 'Number of Beds',
         'Number of Doctors / Physicians': 'Number of Doctors',
         'Number of Nurses': 'Number of Nurses',
         'Number of Midwives Professional': 'Number of Midwives',
-        'Average Monthly Patient Footfall': 'Average Monthly Patient Footfall',
         'Ambulance Service Available': 'Ambulance Service',
         'Count of Ambulance': 'Ambulance Count',
-        'Pharmacy Available': 'Pharmacy Available'
-    })
+        # 'Number of Beds in Emergency Wards' is kept as is after stripping, no rename needed.
+        # 'Average Monthly Patient Footfall' is kept as is after stripping, no rename needed.
+    }
+
+    # Apply renaming to the DataFrame columns
+    df = df.rename(columns=rename_mapping)
 
     # Convert numerical columns, handling 'N.A.' and other non-numeric values
     numerical_cols = [
@@ -72,11 +76,15 @@ def load_data():
         'Ambulance Count'
     ]
     for col in numerical_cols:
-        # Replace 'N.A.' or other non-numeric strings with NaN, then convert to numeric
-        df[col] = pd.to_numeric(
-            df[col].astype(str).str.replace('N.A.', str(np.nan), regex=False),
-            errors='coerce'
-        ).fillna(0).astype(int) # Fill NaN with 0 after conversion, then convert to int
+        # Ensure the column exists before attempting to convert it
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col].astype(str).str.replace('N.A.', str(np.nan), regex=False),
+                errors='coerce'
+            ).fillna(0).astype(int)
+        else:
+            # Print a warning if a numerical column is not found (should not happen with the new cleaning)
+            print(f"Warning: Column '{col}' not found in DataFrame for numerical conversion.")
 
     return df
 
