@@ -1,5 +1,3 @@
-# 🚗 Car Retailer Dashboard (Enhanced with Mobile + Smart Features)
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,6 +5,7 @@ import plotly.graph_objects as go
 
 # ----------------- Page Setup -----------------
 st.set_page_config(page_title="🚗 Car Retailer Dashboard", layout="wide")
+st.title("🚗 Car Retailer Sales Dashboard")
 
 # ----------------- Dark Monochrome Theme -----------------
 st.markdown("""
@@ -37,55 +36,51 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🚗 Car Retailer Sales Dashboard")
-
 # ----------------- Load Data -----------------
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/94d364e98061cd58f8b52224f33037aa7ca3ed5f/DV2.csv"
-    df = pd.read_csv(url, encoding="latin1")
+    df = pd.read_csv(url, encoding='latin1')
     df.columns = [col.strip().replace("ï»¿", "") for col in df.columns]
-    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-    df["Year"] = df["Date"].dt.year
-    df["Quarter"] = df["Date"].dt.to_period("Q").astype(str)
-    df["Month"] = df["Date"].dt.to_period("M").astype(str)
+    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
+    df['Year'] = df['Date'].dt.year
+    df['Quarter'] = df['Date'].dt.to_period('Q').astype(str)
+    df['Month'] = df['Date'].dt.to_period('M').astype(str)
     return df
 
 df = load_data()
 
-# ----------------- Date Range Filter -----------------
-min_date = pd.to_datetime(df["Date"].dropna().min()).date()
-max_date = pd.to_datetime(df["Date"].dropna().max()).date()
-
-start_date, end_date = st.slider(
-    "📅 Select Date Range",
-    min_value=min_date,
-    max_value=max_date,
-    value=(min_date, max_date)
-)
-
-filtered_df = df[
-    (df["Date"] >= pd.to_datetime(start_date)) &
-    (df["Date"] <= pd.to_datetime(end_date))
-]
-
 # ----------------- Filters -----------------
 with st.container():
-    col1, col2, col3 = st.columns([4, 4, 2])
+    col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
     with col1:
-        salespeople = st.multiselect("👤 Salesperson", sorted(df['Salesperson'].dropna().unique()))
+        salespeople = st.multiselect("Salesperson", sorted(df['Salesperson'].dropna().unique()))
     with col2:
-        car_makes = st.multiselect("🚘 Car Make", sorted(df['Car Make'].dropna().unique()))
+        car_makes = st.multiselect("Car Make", sorted(df['Car Make'].dropna().unique()))
     with col3:
-        selected_metric = st.radio("📈 Metric", ["Sale Price", "Commission Earned"], index=0, horizontal=True)
+        car_years = st.multiselect("Car Year", sorted(df['Car Year'].dropna().unique()))
+    with col4:
+        selected_metric = st.radio("Metric", ["Sale Price", "Commission Earned"], index=0, horizontal=True)
 
+# ----------------- Optional Car Model Slicer -----------------
+selected_model = None
+if car_makes and len(car_makes) == 1:
+    model_options = df[df['Car Make'] == car_makes[0]]['Car Model'].dropna().unique()
+    selected_model = st.selectbox(f"Model for {car_makes[0]}", sorted(model_options))
+
+# ----------------- Filtered Data -----------------
+filtered_df = df.copy()
 if salespeople:
     filtered_df = filtered_df[filtered_df['Salesperson'].isin(salespeople)]
 if car_makes:
     filtered_df = filtered_df[filtered_df['Car Make'].isin(car_makes)]
+if selected_model:
+    filtered_df = filtered_df[filtered_df['Car Model'] == selected_model]
+if car_years:
+    filtered_df = filtered_df[filtered_df['Car Year'].astype(str).isin(car_years)]
 
-# ----------------- Summary KPIs -----------------
-st.markdown("### 📊 Summary Metrics")
+# ----------------- Summary Metrics -----------------
+st.markdown("### 📌 Summary Metrics")
 k1, k2, k3, k4 = st.columns(4)
 with k1:
     st.metric("💰 Total Sales", f"${filtered_df['Sale Price'].sum():,.0f}")
@@ -93,26 +88,14 @@ with k2:
     st.metric("🏆 Total Commission", f"${filtered_df['Commission Earned'].sum():,.0f}")
 with k3:
     avg_price = filtered_df['Sale Price'].mean() if not filtered_df.empty else 0
-    st.metric("📉 Avg Sale Price", f"${avg_price:,.0f}")
+    st.metric("📊 Avg Sale Price", f"${avg_price:,.0f}")
 with k4:
     st.metric("📦 Transactions", f"{filtered_df.shape[0]:,}")
 
-# ----------------- QoQ Growth Alert -----------------
-trend_df = filtered_df.groupby('Quarter')[['Sale Price']].sum().reset_index()
-trend_df['QoQ %'] = trend_df['Sale Price'].pct_change().fillna(0) * 100
-if not trend_df.empty:
-    last_q_growth = trend_df['QoQ %'].iloc[-1]
-    st.info(f"**Latest QoQ Growth**: {last_q_growth:.2f}%")
-
-# ----------------- AI-style Summary -----------------
-if st.button("🧠 Generate Smart Summary"):
-    if not filtered_df.empty:
-        top_sp = filtered_df.groupby("Salesperson")[selected_metric].sum().idxmax()
-        top_make = filtered_df.groupby("Car Make")[selected_metric].sum().idxmax()
-        max_sale = filtered_df['Sale Price'].max()
-        st.success(f"**Top Salesperson:** {top_sp}  \n**Top Car Make:** {top_make}  \n**Highest Sale Price:** ${max_sale:,.0f}")
-    else:
-        st.warning("No data to summarize!")
+# ----------------- Download Button -----------------
+st.markdown("### 📥 Download Filtered Data")
+csv = filtered_df.to_csv(index=False).encode("utf-8")
+st.download_button("Download CSV", csv, "filtered_car_sales.csv", "text/csv")
 
 # ----------------- Bar Chart: Top Salespeople -----------------
 st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
@@ -142,7 +125,7 @@ bar_fig.update_layout(
 )
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ----------------- Pie Chart: Car Make -----------------
+# ----------------- Pie Chart: Top Car Makes -----------------
 st.subheader(f"🧩 Top 10 Car Makes by {selected_metric}")
 car_make_metric = (
     filtered_df.groupby('Car Make')[selected_metric]
@@ -164,12 +147,15 @@ pie_fig = go.Figure(data=[
         hoverinfo='label+percent+value'
     )
 ])
-pie_fig.update_layout(template='plotly_dark', height=500)
-st.plotly_chart(pie_fig, use_container_width=True)
+pie_fig.update_layout(template='plotly_dark', height=700, width=800)
+st.plotly_chart(pie_fig, use_container_width=False)
 
 # ----------------- Trend Line -----------------
 st.subheader("📈 Sales and Commission Trend by Quarter")
 trend_df = filtered_df.groupby('Quarter')[['Sale Price', 'Commission Earned']].sum().reset_index()
+trend_df['Sale Price QoQ %'] = trend_df['Sale Price'].pct_change().fillna(0) * 100
+trend_df['Commission QoQ %'] = trend_df['Commission Earned'].pct_change().fillna(0) * 100
+
 trend_fig = px.line(
     trend_df, x='Quarter', y=['Sale Price', 'Commission Earned'],
     markers=True, template='plotly_dark',
@@ -178,15 +164,31 @@ trend_fig = px.line(
 )
 st.plotly_chart(trend_fig, use_container_width=True)
 
-# ----------------- Monthly Animation -----------------
-with st.expander("🎞️ Monthly Trend Animation"):
+# ----------------- QoQ % Change Table -----------------
+with st.expander("🔍 View Quarter-over-Quarter % Change Table", expanded=True):
+    st.dataframe(
+        trend_df[['Quarter', 'Sale Price QoQ %', 'Commission QoQ %']].style.format({
+            'Sale Price QoQ %': '{:.2f}%',
+            'Commission QoQ %': '{:.2f}%'
+        }),
+        use_container_width=True
+    )
+
+# ----------------- Monthly Animated Trend -----------------
+with st.expander("🎞️ View Monthly Animated Trend", expanded=True):
     monthly_trend = filtered_df.groupby('Month')[['Sale Price', 'Commission Earned']].sum().reset_index()
     melted = monthly_trend.melt(id_vars='Month', var_name='Metric', value_name='Amount')
+
     animated_fig = px.bar(
-        melted, x='Metric', y='Amount', animation_frame='Month',
-        template='plotly_dark', color='Metric',
+        melted,
+        x='Metric',
+        y='Amount',
+        animation_frame='Month',
+        template='plotly_dark',
+        color='Metric',
         color_discrete_sequence=['#AAAAAA', '#555555'],
-        labels={'Amount': 'Amount ($)', 'Metric': 'Metric'}
+        labels={'Amount': 'Amount ($)', 'Metric': 'Metric'},
+        title="📽️ Monthly Trend Animation"
     )
     animated_fig.update_layout(yaxis_tickprefix="$", height=500)
     st.plotly_chart(animated_fig, use_container_width=True)
