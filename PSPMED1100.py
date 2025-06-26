@@ -52,7 +52,9 @@ def load_data():
     # Step 2: Define a dictionary for renaming columns
     # Keys are the exact column names after stripping, values are the desired new names
     rename_mapping = {
-        'Type (Hospital / Nursing Home / Lab)': 'Facility Type',
+        # Corrected key for 'Facility Type' to account for double space in original header
+        'Type  (Hospital / Nursing Home / Lab)': 'Facility Type', 
+        # Corrected key for 'Class (Public/Private)' to account for colon and space
         'Class : (Public / Private)': 'Class (Public/Private)',
         'Pharmacy Available : Yes/No': 'Pharmacy Available',
         'Number of Beds in facility type': 'Number of Beds',
@@ -86,7 +88,7 @@ def load_data():
                 errors='coerce'
             ).fillna(0).astype(int)
         else:
-            # Print a warning if a numerical column is not found (should not happen with the new cleaning)
+            # This warning should ideally not be triggered with correct renaming
             print(f"Warning: Column '{col}' not found in DataFrame for numerical conversion.")
 
     return df
