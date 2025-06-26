@@ -160,6 +160,12 @@ st.markdown("### 📥 Download Filtered Data")
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 st.download_button("Download CSV", csv, "filtered_hospital_data.csv", "text/csv")
 
+# ----------------- Raw Filtered Data Table -----------------
+st.markdown("### 📄 Filtered Data Table")
+# This expander now defaults to open (expanded=True) to immediately show the table
+with st.expander("🔍 View Raw Filtered Data", expanded=True):
+    st.dataframe(filtered_df, use_container_width=True)
+
 # ----------------- Bar Chart: Top Facilities by Selected Metric -----------------
 st.subheader(f"📊 Top 10 Facilities by {selected_metric}")
 # Group by 'Facility Name' and sum the selected metric, then get the top 10
@@ -189,6 +195,13 @@ bar_fig.update_layout(
     xaxis_tickangle=-45 # Angle x-axis labels for better readability on many labels
 )
 st.plotly_chart(bar_fig, use_container_width=True) # Display the bar chart
+
+# ----------------- Table for Top Facilities -----------------
+st.markdown(f"### 📈 Table: Top 10 Facilities by {selected_metric}")
+# This expander now defaults to open (expanded=True) to immediately show the table
+with st.expander("🔍 View Top 10 Facilities Data", expanded=True):
+    st.dataframe(top_facilities, use_container_width=True)
+
 
 # ----------------- Pie Charts: Distribution by Facility Type & Class -----------------
 st.subheader("🧩 Distribution of Facilities by Type and Class")
@@ -233,6 +246,13 @@ with col_left:
     pie_fig_type.update_layout(template='plotly_dark', height=700, title="Distribution by Facility Type")
     st.plotly_chart(pie_fig_type, use_container_width=True) # Display the pie chart
 
+    # Table for Facility Type Distribution
+    st.markdown("### 📋 Table: Facility Type Distribution")
+    # This expander now defaults to open (expanded=True) to immediately show the table
+    with st.expander("🔍 View Facility Type Distribution Data", expanded=True):
+        st.dataframe(facility_type_distribution, use_container_width=True)
+
+
 with col_right:
     # Distribution of facilities by class (Public/Private)
     class_distribution = (
@@ -259,5 +279,11 @@ with col_right:
     ])
     pie_fig_class.update_layout(template='plotly_dark', height=700, title="Distribution by Class (Public/Private)")
     st.plotly_chart(pie_fig_class, use_container_width=True) # Display the pie chart
+
+    # Table for Class Distribution
+    st.markdown("### 📋 Table: Class Distribution")
+    # This expander now defaults to open (expanded=True) to immediately show the table
+    with st.expander("🔍 View Class Distribution Data", expanded=True):
+        st.dataframe(class_distribution, use_container_width=True)
 
 # No time-series charts as the dataset does not contain date/time information.
