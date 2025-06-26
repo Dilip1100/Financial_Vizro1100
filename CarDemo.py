@@ -21,6 +21,31 @@ df = load_data()
 st.set_page_config(page_title="🚗 Car Retailer Dashboard", layout="wide")
 st.title("🚗 Car Retailer Sales Dashboard")
 
+# ---- Apply Custom Theme ----
+st.markdown("""
+    <style>
+        body, .stApp {
+            background-color: #0E1117;
+            color: #FAFAFA;
+        }
+        .stSelectbox, .stMultiselect, .stRadio, .stMetric, .stDownloadButton {
+            background-color: #1C1F26;
+            color: #FAFAFA;
+        }
+        .stMetricLabel {
+            color: #BBBBBB !important;
+        }
+        .stButton>button {
+            background-color: #3A3F4B;
+            color: white;
+        }
+        .css-1d391kg {
+            background-color: #1C1F26;
+            border-radius: 0.5rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # ---- Top Filters (Slicers) ----
 with st.container():
     col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
@@ -78,7 +103,7 @@ bar_fig = go.Figure(data=[
         y=top_salespeople[selected_metric],
         marker=dict(
             color=top_salespeople[selected_metric],
-            colorscale='Viridis',
+            colorscale='Inferno',
             showscale=True,
             line=dict(color='gray', width=1.5)
         ),
@@ -113,7 +138,7 @@ pie_fig = go.Figure(data=[
         hole=0.2,
         pull=pull_values,
         marker=dict(
-            colors=px.colors.sequential.Plasma_r,
+            colors=px.colors.sequential.Inferno,
             line=dict(color='white', width=1.5)
         ),
         hoverinfo='label+percent+value',
@@ -163,6 +188,7 @@ with st.expander("🎞️ View Monthly Animated Trend"):
         animation_frame='Month',
         template='plotly_dark',
         color='Metric',
+        color_discrete_sequence=px.colors.sequential.Inferno,
         labels={'Amount': 'Amount ($)', 'Metric': 'Metric'},
         title="📽️ Monthly Trend Animation"
     )
