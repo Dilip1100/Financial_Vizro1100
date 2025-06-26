@@ -125,30 +125,57 @@ bar_fig.update_layout(
 )
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ----------------- Pie Chart: Top Car Makes -----------------
-st.subheader(f"🧩 Top 10 Car Makes by {selected_metric}")
-car_make_metric = (
-    filtered_df.groupby('Car Make')[selected_metric]
-    .sum().nlargest(10).reset_index()
-)
-pulls = [0.1 if i == 0 else 0.05 for i in range(len(car_make_metric))]
+# ----------------- Pie Charts: Top Car Makes & Models -----------------
+st.subheader("🧩 Top 10 Car Makes and Models by Sale Price")
+col_left, col_right = st.columns(2)
 
-pie_fig = go.Figure(data=[
-    go.Pie(
-        labels=car_make_metric['Car Make'],
-        values=car_make_metric[selected_metric],
-        pull=pulls,
-        hole=0.2,
-        marker=dict(
-            colors=px.colors.sequential.Greys,
-            line=dict(color='white', width=1)
-        ),
-        textinfo='label+percent',
-        hoverinfo='label+percent+value'
+with col_left:
+    car_make_metric = (
+        filtered_df.groupby('Car Make')['Sale Price']
+        .sum().nlargest(10).reset_index()
     )
-])
-pie_fig.update_layout(template='plotly_dark', height=700, width=800)
-st.plotly_chart(pie_fig, use_container_width=False)
+    pulls_make = [0.1 if i == 0 else 0.05 for i in range(len(car_make_metric))]
+
+    pie_fig_make = go.Figure(data=[
+        go.Pie(
+            labels=car_make_metric['Car Make'],
+            values=car_make_metric['Sale Price'],
+            pull=pulls_make,
+            hole=0.2,
+            marker=dict(
+                colors=px.colors.sequential.Greys,
+                line=dict(color='white', width=1)
+            ),
+            textinfo='label+percent',
+            hoverinfo='label+percent+value'
+        )
+    ])
+    pie_fig_make.update_layout(template='plotly_dark', height=700, title="Top Car Makes by Sale Price")
+    st.plotly_chart(pie_fig_make, use_container_width=True)
+
+with col_right:
+    car_model_metric = (
+        filtered_df.groupby('Car Model')['Sale Price']
+        .sum().nlargest(10).reset_index()
+    )
+    pulls_model = [0.1 if i == 0 else 0.05 for i in range(len(car_model_metric))]
+
+    pie_fig_model = go.Figure(data=[
+        go.Pie(
+            labels=car_model_metric['Car Model'],
+            values=car_model_metric['Sale Price'],
+            pull=pulls_model,
+            hole=0.2,
+            marker=dict(
+                colors=px.colors.sequential.Greys[::-1],
+                line=dict(color='white', width=1)
+            ),
+            textinfo='label+percent',
+            hoverinfo='label+percent+value'
+        )
+    ])
+    pie_fig_model.update_layout(template='plotly_dark', height=700, title="Top Car Models by Sale Price")
+    st.plotly_chart(pie_fig_model, use_container_width=True)
 
 # ----------------- Trend Line -----------------
 st.subheader("📈 Sales and Commission Trend by Quarter")
