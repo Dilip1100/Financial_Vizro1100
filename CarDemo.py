@@ -112,13 +112,12 @@ with k4:
     st.markdown(f'<div class="metric-card">📦 **Transactions**<br>{filtered_df.shape[0]:,}</div>', unsafe_allow_html=True)
 
 # ----------------- Download Buttons -----------------
-st.markdown("### 📁 Export Data")
+st.markdown("### 📁 Export CSV")
 excel_buffer = BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
     filtered_df.to_excel(writer, index=False, sheet_name='FilteredData')
 st.download_button("Download CSV", filtered_df.to_csv(index=False).encode(), "filtered_data.csv", "text/csv")
 st.download_button("Download Excel", excel_buffer.getvalue(), "filtered_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-st.download_button("Download JSON", filtered_df.to_json(orient="records").encode(), "filtered_data.json", "application/json")
 
 # ----------------- Bar Chart -----------------
 st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
@@ -198,4 +197,3 @@ with st.expander("🎞️ View Monthly Animated Trend", expanded=True):
     )
     animated_fig.update_layout(yaxis_tickprefix="$", height=500)
     st.plotly_chart(animated_fig, use_container_width=True)
-
