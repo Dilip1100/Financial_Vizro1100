@@ -40,8 +40,11 @@ st.markdown("""
 # ----------------- Load Data -----------------
 @st.cache_data
 def load_data():
+    # Use the raw GitHub URL for the CSV file to ensure correct parsing
+    csv_url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv"
+    
     # Load data from the attached CSV file, skipping bad lines
-    df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
+    df = pd.read_csv(csv_url, encoding='latin1', on_bad_lines='skip')
 
     # Step 1: Strip leading/trailing whitespace from all column names
     df.columns = df.columns.str.strip()
