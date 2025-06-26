@@ -62,12 +62,20 @@ with st.container():
     with col4:
         selected_metric = st.radio("Metric", ["Sale Price", "Commission Earned"], index=0, horizontal=True)
 
+# ----------------- Optional Car Model Slicer -----------------
+selected_model = None
+if car_makes and len(car_makes) == 1:
+    model_options = df[df['Car Make'] == car_makes[0]]['Car Model'].dropna().unique()
+    selected_model = st.selectbox(f"Model for {car_makes[0]}", sorted(model_options))
+
 # ----------------- Filtered Data -----------------
 filtered_df = df.copy()
 if salespeople:
     filtered_df = filtered_df[filtered_df['Salesperson'].isin(salespeople)]
 if car_makes:
     filtered_df = filtered_df[filtered_df['Car Make'].isin(car_makes)]
+if selected_model:
+    filtered_df = filtered_df[filtered_df['Car Model'] == selected_model]
 if car_years:
     filtered_df = filtered_df[filtered_df['Car Year'].astype(str).isin(car_years)]
 
@@ -139,7 +147,7 @@ pie_fig = go.Figure(data=[
         hoverinfo='label+percent+value'
     )
 ])
-pie_fig.update_layout(template='plotly_dark', height=500)
+pie_fig.update_layout(template='plotly_dark', height=700, width=800)
 st.plotly_chart(pie_fig, use_container_width=False)
 
 # ----------------- Trend Line -----------------
