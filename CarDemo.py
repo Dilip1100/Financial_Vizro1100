@@ -7,28 +7,31 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="🚗 Car Retailer Dashboard", layout="wide")
 st.title("🚗 Car Retailer Sales Dashboard")
 
-# ----------------- Custom Monochrome Theme -----------------
+# ----------------- Dark Monochrome Theme -----------------
 st.markdown("""
     <style>
         body, .stApp {
-            background-color: #FFFFFF;
-            color: #000000;
+            background-color: #121212;
+            color: #E0E0E0;
             font-family: 'Segoe UI', sans-serif;
         }
         .stSelectbox, .stMultiselect, .stRadio, .stMetric, .stDownloadButton {
-            background-color: #F5F5F5;
-            color: #000000;
+            background-color: #1E1E1E;
+            color: #E0E0E0;
         }
         .stMetricLabel {
-            color: #444444 !important;
+            color: #AAAAAA !important;
         }
         .stButton>button {
-            background-color: #D9D9D9;
-            color: #000000;
+            background-color: #333333;
+            color: #FAFAFA;
         }
         .css-1d391kg {
-            background-color: #F0F0F0;
+            background-color: #1E1E1E;
             border-radius: 0.5rem;
+        }
+        .stDataFrame, .element-container {
+            color: #FAFAFA;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -86,7 +89,7 @@ st.markdown("### 📥 Download Filtered Data")
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 st.download_button("Download CSV", csv, "filtered_car_sales.csv", "text/csv")
 
-# ----------------- Bar Chart: Top 10 Salespeople -----------------
+# ----------------- Bar Chart: Top Salespeople -----------------
 st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
 top_salespeople = (
     filtered_df.groupby('Salesperson')[selected_metric]
@@ -101,20 +104,20 @@ bar_fig = go.Figure(data=[
             color=top_salespeople[selected_metric],
             colorscale='Greys',
             showscale=True,
-            line=dict(color='black', width=1)
+            line=dict(color='white', width=1.2)
         ),
         hovertemplate='<b>%{x}</b><br>' + selected_metric + ': %{y:$,.0f}<extra></extra>',
     )
 ])
 bar_fig.update_layout(
-    template='plotly_white',
+    template='plotly_dark',
     xaxis_title="Salesperson",
     yaxis_title=selected_metric,
     height=500
 )
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ----------------- Pie Chart: Top 10 Car Makes -----------------
+# ----------------- Pie Chart: Top Car Makes -----------------
 st.subheader(f"🧩 Top 10 Car Makes by {selected_metric}")
 car_make_metric = (
     filtered_df.groupby('Car Make')[selected_metric]
@@ -130,13 +133,13 @@ pie_fig = go.Figure(data=[
         hole=0.2,
         marker=dict(
             colors=px.colors.sequential.Greys,
-            line=dict(color='black', width=1)
+            line=dict(color='white', width=1)
         ),
         textinfo='label+percent',
         hoverinfo='label+percent+value'
     )
 ])
-pie_fig.update_layout(template='plotly_white', height=500)
+pie_fig.update_layout(template='plotly_dark', height=500)
 st.plotly_chart(pie_fig, use_container_width=False)
 
 # ----------------- Trend Line -----------------
@@ -147,13 +150,13 @@ trend_df['Commission QoQ %'] = trend_df['Commission Earned'].pct_change().fillna
 
 trend_fig = px.line(
     trend_df, x='Quarter', y=['Sale Price', 'Commission Earned'],
-    markers=True, template='plotly_white',
-    color_discrete_sequence=['#111111', '#555555'],
+    markers=True, template='plotly_dark',
+    color_discrete_sequence=['#AAAAAA', '#555555'],
     labels={'value': 'Amount', 'Quarter': 'Quarter'}
 )
 st.plotly_chart(trend_fig, use_container_width=True)
 
-# ----------------- QoQ % Change Table (Expanded by Default) -----------------
+# ----------------- QoQ % Change Table -----------------
 with st.expander("🔍 View Quarter-over-Quarter % Change Table", expanded=True):
     st.dataframe(
         trend_df[['Quarter', 'Sale Price QoQ %', 'Commission QoQ %']].style.format({
@@ -163,7 +166,7 @@ with st.expander("🔍 View Quarter-over-Quarter % Change Table", expanded=True)
         use_container_width=True
     )
 
-# ----------------- Animated Monthly Trend (Expanded by Default) -----------------
+# ----------------- Monthly Animated Trend -----------------
 with st.expander("🎞️ View Monthly Animated Trend", expanded=True):
     monthly_trend = filtered_df.groupby('Month')[['Sale Price', 'Commission Earned']].sum().reset_index()
     melted = monthly_trend.melt(id_vars='Month', var_name='Metric', value_name='Amount')
@@ -173,9 +176,9 @@ with st.expander("🎞️ View Monthly Animated Trend", expanded=True):
         x='Metric',
         y='Amount',
         animation_frame='Month',
-        template='plotly_white',
+        template='plotly_dark',
         color='Metric',
-        color_discrete_sequence=['#111111', '#555555'],
+        color_discrete_sequence=['#AAAAAA', '#555555'],
         labels={'Amount': 'Amount ($)', 'Metric': 'Metric'},
         title="📽️ Monthly Trend Animation"
     )
