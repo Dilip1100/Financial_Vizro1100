@@ -41,7 +41,8 @@ st.markdown("""
 @st.cache_data
 def load_data():
     # Load data from the attached CSV file
-    df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv", encoding='latin1')
+    # Added on_bad_lines='skip' to handle rows with too many columns, which were causing ParserErrors.
+    df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
 
     # Clean column names by stripping whitespace and replacing special characters
     df.columns = [col.strip().replace("ï»¿", "").replace(" :", "").replace(" (Hospital / Nursing Home / Lab)", "").replace(" (Public / Private)", "").strip() for col in df.columns]
