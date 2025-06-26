@@ -181,3 +181,4 @@ with st.expander("🎞️ Monthly Trend Animation"):
     )
     animated_fig.update_layout(yaxis_tickprefix="$", height=500)
     st.plotly_chart(animated_fig, use_container_width=True)
+    
