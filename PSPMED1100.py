@@ -41,7 +41,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
     # Load data from the attached CSV file, skipping bad lines
-    df = pd.read_csv("PMC Hospital Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
+    df = pd.read_csv("https://github.com/Dilip1100/Financial_Vizro1100/blob/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv", encoding='latin1', on_bad_lines='skip')
 
     # Step 1: Strip leading/trailing whitespace from all column names
     df.columns = df.columns.str.strip()
