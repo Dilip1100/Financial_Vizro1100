@@ -1,4 +1,4 @@
-# 🚗 Enhanced Car Retailer Dashboard - Streamlit App
+# 🚗 Car Retailer Dashboard (Enhanced with Mobile + Smart Features)
 
 import streamlit as st
 import pandas as pd
@@ -37,7 +37,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ----------------- Title -----------------
 st.title("🚗 Car Retailer Sales Dashboard")
 
 # ----------------- Load Data -----------------
@@ -55,9 +54,20 @@ def load_data():
 df = load_data()
 
 # ----------------- Date Range Filter -----------------
-min_date, max_date = df["Date"].min(), df["Date"].max()
-start_date, end_date = st.slider("📅 Select Date Range", min_value=min_date, max_value=max_date, value=(min_date, max_date))
-filtered_df = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
+min_date = pd.to_datetime(df["Date"].dropna().min()).date()
+max_date = pd.to_datetime(df["Date"].dropna().max()).date()
+
+start_date, end_date = st.slider(
+    "📅 Select Date Range",
+    min_value=min_date,
+    max_value=max_date,
+    value=(min_date, max_date)
+)
+
+filtered_df = df[
+    (df["Date"] >= pd.to_datetime(start_date)) &
+    (df["Date"] <= pd.to_datetime(end_date))
+]
 
 # ----------------- Filters -----------------
 with st.container():
@@ -92,7 +102,6 @@ trend_df = filtered_df.groupby('Quarter')[['Sale Price']].sum().reset_index()
 trend_df['QoQ %'] = trend_df['Sale Price'].pct_change().fillna(0) * 100
 if not trend_df.empty:
     last_q_growth = trend_df['QoQ %'].iloc[-1]
-    color = "inverse" if last_q_growth < 0 else "normal"
     st.info(f"**Latest QoQ Growth**: {last_q_growth:.2f}%")
 
 # ----------------- AI-style Summary -----------------
@@ -181,4 +190,3 @@ with st.expander("🎞️ Monthly Trend Animation"):
     )
     animated_fig.update_layout(yaxis_tickprefix="$", height=500)
     st.plotly_chart(animated_fig, use_container_width=True)
-    
