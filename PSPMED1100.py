@@ -17,6 +17,13 @@ except ImportError:
 
 # ----------------- Setup -----------------
 st.set_page_config(page_title="🏥 Medical Dashboard", layout="wide")
+st.markdown("""
+    <style>
+    body {background-color: #111111; color: #f1f1f1;}
+    .stApp {background-color: #111111;}
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("🏥 Medical College & Hospital Dashboard")
 
 # ----------------- Initialize Faker -----------------
@@ -164,8 +171,9 @@ st.plotly_chart(fig, use_container_width=True)
 # 7. Heatmap
 st.markdown("### 🔥 Heatmap: Dept vs Blood Group")
 heat_df = pd.crosstab(filtered["Department"], filtered["Blood Group"])
-fig = px.imshow(heat_df, text_auto=True, color_continuous_scale='Viridis')
-fig.update_layout(title="Heatmap of Departments and Blood Groups", template="plotly_dark")
+fig = px.imshow(heat_df, text_auto=True, color_continuous_scale='Greys')
+fig.update_layout(title="Heatmap of Departments and Blood Groups", template="plotly_dark",
+                  autosize=True, width=1200, height=600)
 st.plotly_chart(fig, use_container_width=True)
 
 # ----------------- Admin Tabs -----------------
