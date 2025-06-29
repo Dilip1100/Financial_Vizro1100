@@ -42,7 +42,10 @@ st.markdown("""
 def load_data():
     url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/94d364e98061cd58f8b52224f33037aa7ca3ed5f/DV2.csv"
     df = pd.read_csv(url, encoding='latin1')
-    df.columns = [col.strip().replace("\ufeff", "") for col in df.columns]
+    df.columns = df.columns.str.strip().str.replace("ï»¿", "", regex=False).str.replace("﻿", "", regex=False)
+    if 'Date' not in df.columns:
+        st.error(f"Expected 'Date' column not found. Columns present: {df.columns.tolist()}")
+        return pd.DataFrame()
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     df['Year'] = df['Date'].dt.year
     df['Quarter'] = df['Date'].dt.to_period('Q').astype(str)
@@ -50,6 +53,9 @@ def load_data():
     return df
 
 df = load_data()
+
+if df.empty:
+    st.stop()
 
 # ----------------- Filters -----------------
 with st.container():
