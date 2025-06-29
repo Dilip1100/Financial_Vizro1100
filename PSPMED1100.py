@@ -46,7 +46,7 @@ def generate_patient_data(n=500):
         patients.append({
             "Patient ID": fake.unique.uuid4()[:8],
             "Name": fake.name(),
-            "Sex": random.choice(["Male", "Female", "Other"]),
+            "Sex": random.choice(["Male", "Female"]),
             "Contact": fake.phone_number(),
             "Marital Status": random.choice(["Married", "Single", "Divorced"]),
             "Blood Group": random.choice(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]),
@@ -77,13 +77,15 @@ admin_df = generate_admin_data()
 
 # ----------------- Top Filters -----------------
 st.markdown("### 🔍 Filters")
-colf1, colf2, colf3 = st.columns(3)
+colf1, colf2, colf3, colf4 = st.columns([3, 2, 2, 3])
 with colf1:
     department_filter = st.multiselect("Select Department", all_medical_departments)
 with colf2:
-    sex_filter = st.multiselect("Select Gender", patient_df["Sex"].unique())
+    sex_filter = st.multiselect("Select Gender", ["Male", "Female"])
 with colf3:
     blood_filter = st.multiselect("Select Blood Group", patient_df["Blood Group"].unique())
+with colf4:
+    search_term = st.text_input("Search Patient Name")
 
 filtered_patients = patient_df.copy()
 if department_filter:
@@ -92,6 +94,8 @@ if sex_filter:
     filtered_patients = filtered_patients[filtered_patients["Sex"].isin(sex_filter)]
 if blood_filter:
     filtered_patients = filtered_patients[filtered_patients["Blood Group"].isin(blood_filter)]
+if search_term:
+    filtered_patients = filtered_patients[filtered_patients["Name"].str.contains(search_term, case=False, na=False)]
 
 # ----------------- KPIs -----------------
 st.markdown("### 📊 Key Metrics")
