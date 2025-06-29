@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -41,7 +42,7 @@ st.markdown("""
 def load_data():
     url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/94d364e98061cd58f8b52224f33037aa7ca3ed5f/DV2.csv"
     df = pd.read_csv(url, encoding='latin1')
-    df.columns = [col.strip().replace("ï»¿", "") for col in df.columns]
+    df.columns = [col.strip().replace("\ufeff", "") for col in df.columns]
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     df['Year'] = df['Date'].dt.year
     df['Quarter'] = df['Date'].dt.to_period('Q').astype(str)
@@ -62,13 +63,13 @@ with st.container():
     with col4:
         selected_metric = st.radio("Metric", ["Sale Price", "Commission Earned"], index=0, horizontal=True)
 
-# ----------------- Optional Car Model Slicer -----------------
+# Optional Car Model Slicer
 selected_model = None
 if car_makes and len(car_makes) == 1:
     model_options = df[df['Car Make'] == car_makes[0]]['Car Model'].dropna().unique()
     selected_model = st.selectbox(f"Model for {car_makes[0]}", sorted(model_options))
 
-# ----------------- Filtered Data -----------------
+# Apply Filters
 filtered_df = df.copy()
 if salespeople:
     filtered_df = filtered_df[filtered_df['Salesperson'].isin(salespeople)]
@@ -93,11 +94,11 @@ with k4:
     st.metric("📦 Transactions", f"{filtered_df.shape[0]:,}")
 
 # ----------------- Download Button -----------------
-st.markdown("### 📥 Download Filtered Data")
+st.markdown("### 📅 Download Filtered Data")
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 st.download_button("Download CSV", csv, "filtered_car_sales.csv", "text/csv")
 
-# ----------------- Bar Chart: Top Salespeople -----------------
+# ----------------- Charts -----------------
 st.subheader(f"📊 Top 10 Salespeople by {selected_metric}")
 top_salespeople = (
     filtered_df.groupby('Salesperson')[selected_metric]
@@ -108,114 +109,91 @@ bar_fig = go.Figure(data=[
     go.Bar(
         x=top_salespeople['Salesperson'],
         y=top_salespeople[selected_metric],
-        marker=dict(
-            color=top_salespeople[selected_metric],
-            colorscale='Greys',
-            showscale=True,
-            line=dict(color='white', width=1.2)
-        ),
+        marker=dict(color=top_salespeople[selected_metric], colorscale='Greys', showscale=True, line=dict(color='white', width=1.2)),
         hovertemplate='<b>%{x}</b><br>' + selected_metric + ': %{y:$,.0f}<extra></extra>',
     )
 ])
-bar_fig.update_layout(
-    template='plotly_dark',
-    xaxis_title="Salesperson",
-    yaxis_title=selected_metric,
-    height=500
-)
+bar_fig.update_layout(template='plotly_dark', xaxis_title="Salesperson", yaxis_title=selected_metric, height=500)
 st.plotly_chart(bar_fig, use_container_width=True)
 
-# ----------------- Pie Charts: Top Car Makes & Models -----------------
-st.subheader("🧩 Top 10 Car Makes and Models by Sale Price")
+st.subheader("🧹 Top 10 Car Makes and Models by Sale Price")
 col_left, col_right = st.columns(2)
 
 with col_left:
-    car_make_metric = (
-        filtered_df.groupby('Car Make')['Sale Price']
-        .sum().nlargest(10).reset_index()
-    )
-    pulls_make = [0.1 if i == 0 else 0.05 for i in range(len(car_make_metric))]
-
-    pie_fig_make = go.Figure(data=[
-        go.Pie(
-            labels=car_make_metric['Car Make'],
-            values=car_make_metric['Sale Price'],
-            pull=pulls_make,
-            hole=0.2,
-            marker=dict(
-                colors=px.colors.sequential.Greys,
-                line=dict(color='white', width=1)
-            ),
-            textinfo='label+percent',
-            hoverinfo='label+percent+value'
-        )
-    ])
+    car_make_metric = filtered_df.groupby('Car Make')['Sale Price'].sum().nlargest(10).reset_index()
+    pie_fig_make = px.pie(car_make_metric, names='Car Make', values='Sale Price', hole=0.2, color_discrete_sequence=px.colors.sequential.Greys)
     pie_fig_make.update_layout(template='plotly_dark', height=700, title="Top Car Makes by Sale Price")
     st.plotly_chart(pie_fig_make, use_container_width=True)
 
 with col_right:
-    car_model_metric = (
-        filtered_df.groupby('Car Model')['Sale Price']
-        .sum().nlargest(10).reset_index()
-    )
-    pulls_model = [0.1 if i == 0 else 0.05 for i in range(len(car_model_metric))]
-
-    pie_fig_model = go.Figure(data=[
-        go.Pie(
-            labels=car_model_metric['Car Model'],
-            values=car_model_metric['Sale Price'],
-            pull=pulls_model,
-            hole=0.2,
-            marker=dict(
-                colors=px.colors.sequential.Greys[::-1],
-                line=dict(color='white', width=1)
-            ),
-            textinfo='label+percent',
-            hoverinfo='label+percent+value'
-        )
-    ])
+    car_model_metric = filtered_df.groupby('Car Model')['Sale Price'].sum().nlargest(10).reset_index()
+    pie_fig_model = px.pie(car_model_metric, names='Car Model', values='Sale Price', hole=0.2, color_discrete_sequence=px.colors.sequential.Greys[::-1])
     pie_fig_model.update_layout(template='plotly_dark', height=700, title="Top Car Models by Sale Price")
     st.plotly_chart(pie_fig_model, use_container_width=True)
 
-# ----------------- Trend Line -----------------
 st.subheader("📈 Sales and Commission Trend by Quarter")
 trend_df = filtered_df.groupby('Quarter')[['Sale Price', 'Commission Earned']].sum().reset_index()
 trend_df['Sale Price QoQ %'] = trend_df['Sale Price'].pct_change().fillna(0) * 100
 trend_df['Commission QoQ %'] = trend_df['Commission Earned'].pct_change().fillna(0) * 100
-
-trend_fig = px.line(
-    trend_df, x='Quarter', y=['Sale Price', 'Commission Earned'],
-    markers=True, template='plotly_dark',
-    color_discrete_sequence=['#AAAAAA', '#555555'],
-    labels={'value': 'Amount', 'Quarter': 'Quarter'}
-)
+trend_fig = px.line(trend_df, x='Quarter', y=['Sale Price', 'Commission Earned'], markers=True, template='plotly_dark', color_discrete_sequence=['#AAAAAA', '#555555'])
 st.plotly_chart(trend_fig, use_container_width=True)
 
-# ----------------- QoQ % Change Table -----------------
 with st.expander("🔍 View Quarter-over-Quarter % Change Table", expanded=True):
-    st.dataframe(
-        trend_df[['Quarter', 'Sale Price QoQ %', 'Commission QoQ %']].style.format({
-            'Sale Price QoQ %': '{:.2f}%',
-            'Commission QoQ %': '{:.2f}%'
-        }),
-        use_container_width=True
-    )
+    st.dataframe(trend_df[['Quarter', 'Sale Price QoQ %', 'Commission QoQ %']].style.format({'Sale Price QoQ %': '{:.2f}%', 'Commission QoQ %': '{:.2f}%'}), use_container_width=True)
 
-# ----------------- Monthly Animated Trend -----------------
 with st.expander("🎞️ View Monthly Animated Trend", expanded=True):
     monthly_trend = filtered_df.groupby('Month')[['Sale Price', 'Commission Earned']].sum().reset_index()
     melted = monthly_trend.melt(id_vars='Month', var_name='Metric', value_name='Amount')
-
-    animated_fig = px.bar(
-        melted,
-        x='Metric',
-        y='Amount',
-        animation_frame='Month',
-        template='plotly_dark',
-        color='Metric',
-        color_discrete_sequence=['#AAAAAA', '#555555'],
-        labels={'Amount': 'Amount ($)', 'Metric': 'Metric'},
-        title="📽️ Monthly Trend Animation"
-    )
+    animated_fig = px.bar(melted, x='Metric', y='Amount', animation_frame='Month', template='plotly_dark', color='Metric', color_discrete_sequence=['#AAAAAA', '#555555'])
     animated_fig.update_layout(yaxis_tickprefix="$", height=500)
     st.plotly_chart(animated_fig, use_container_width=True)
+
+# ----------------- Additional Tabs: HR, Inventory, CRM -----------------
+st.markdown("---")
+st.header("🧪 Business Operations Insights")
+
+tab1, tab2, tab3 = st.tabs(["👥 HR Overview", "📦 Inventory Status", "📞 CRM Interactions"])
+
+with tab1:
+    st.subheader("👥 HR Overview")
+    hr_data = pd.DataFrame({
+        "Employee ID": [f"E{1000+i}" for i in range(10)],
+        "Name": [f"Employee {i}" for i in range(1, 11)],
+        "Role": ["Sales Exec", "Manager", "Technician", "Clerk", "Sales Exec", "Technician", "HR", "Manager", "Clerk", "Sales Exec"],
+        "Department": ["Sales", "Sales", "Service", "Admin", "Sales", "Service", "HR", "Sales", "Admin", "Sales"],
+        "Join Date": pd.date_range(start="2018-01-01", periods=10, freq="180D"),
+        "Salary": [50000 + i*1500 for i in range(10)],
+        "Performance Score": [round(x, 1) for x in np.random.uniform(2.5, 5.0, 10)]
+    })
+    st.dataframe(hr_data, use_container_width=True)
+    st.markdown("#### 📈 Performance Distribution")
+    st.plotly_chart(px.histogram(hr_data, x="Performance Score", nbins=5, template="plotly_dark"), use_container_width=True)
+
+with tab2:
+    st.subheader("📦 Inventory Status")
+    inventory_data = pd.DataFrame({
+        "Part ID": [f"P{i:03d}" for i in range(1, 11)],
+        "Part Name": [f"Part {i}" for i in range(1, 11)],
+        "Car Make": np.random.choice(df['Car Make'].dropna().unique(), size=10),
+        "Stock Level": np.random.randint(0, 100, size=10),
+        "Reorder Level": np.random.randint(10, 50, size=10),
+        "Unit Cost": [round(x, 2) for x in np.random.uniform(50, 500, 10)]
+    })
+    st.dataframe(inventory_data, use_container_width=True)
+    st.markdown("#### 🔻 Low Stock Alert")
+    low_stock = inventory_data[inventory_data['Stock Level'] < inventory_data['Reorder Level']]
+    st.bar_chart(low_stock.set_index("Part Name")["Stock Level"])
+
+with tab3:
+    st.subheader("📞 CRM Interactions")
+    crm_data = pd.DataFrame({
+        "Customer ID": [f"C{100+i}" for i in range(10)],
+        "Customer Name": [f"Customer {chr(65+i)}" for i in range(10)],
+        "Contact Date": pd.date_range(end=pd.to_datetime("today"), periods=10),
+        "Interaction Type": np.random.choice(["Inquiry", "Complaint", "Follow-up", "Feedback"], size=10),
+        "Salesperson": np.random.choice(df['Salesperson'].dropna().unique(), size=10),
+        "Satisfaction Score": [round(x, 1) for x in np.random.uniform(1.0, 5.0, 10)]
+    })
+    st.dataframe(crm_data, use_container_width=True)
+    st.markdown("#### 😊 Satisfaction Score by Interaction Type")
+    st.plotly_chart(px.box(crm_data, x="Interaction Type", y="Satisfaction Score", template="plotly_dark"), use_container_width=True)
