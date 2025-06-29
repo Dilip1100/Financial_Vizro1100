@@ -209,4 +209,16 @@ with tabs[2]:
     fig.update_layout(template="plotly_dark")
     st.plotly_chart(fig, use_container_width=True)
 
+# ----------------- Admin Tables -----------------
+st.markdown("### 📄 Admin Department Data Tables")
+
+st.markdown("#### 💰 Finance Data Table")
+st.dataframe(admin_df[["Department", "Month", "Finance Expense (in Lakh ₹)"]], use_container_width=True)
+
+st.markdown("#### 👥 HR Data Table")
+st.dataframe(admin_df[["Department", "Month", "HR Count"]], use_container_width=True)
+
+st.markdown("#### 🛡️ Insurance Data Table")
+st.dataframe(admin_df[["Department", "Month", "Insurance Claims Processed"]], use_container_width=True)
+
 # ----------------- END -----------------
