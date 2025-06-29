@@ -4,9 +4,9 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import random
+import datetime
 import os
 import sys
-import datetime
 
 # ----------------- Try Importing Faker -----------------
 try:
@@ -47,12 +47,26 @@ clinical_departments = [
 
 all_medical_departments = clinical_departments + non_clinical_departments
 
+# ----------------- Generate Doctor Data -----------------
+def generate_doctor_data(n=100):
+    doctors = []
+    for _ in range(n):
+        dept = random.choice(all_medical_departments)
+        doctors.append({
+            "Doctor ID": fake.unique.uuid4()[:6],
+            "Doctor Name": fake.name(),
+            "Department": dept
+        })
+    return pd.DataFrame(doctors)
+
 # ----------------- Generate Patient Data -----------------
-def generate_patient_data(n=500):
+def generate_patient_data(n=500, doctor_df=None):
     patients = []
     for _ in range(n):
         dept = random.choice(all_medical_departments)
         admission_date = datetime.date(2025, random.randint(1, 12), random.randint(1, 28))
+        assigned_doctors = doctor_df[doctor_df['Department'] == dept]
+        doctor_name = assigned_doctors['Doctor Name'].sample(1).values[0] if not assigned_doctors.empty else "Unknown"
         patients.append({
             "Patient ID": fake.unique.uuid4()[:8],
             "Name": fake.name(),
@@ -63,6 +77,7 @@ def generate_patient_data(n=500):
             "Religion": random.choice(["Hindu", "Muslim", "Christian", "Other"]),
             "Symptoms": fake.sentence(nb_words=6),
             "Department": dept,
+            "Doctor": doctor_name,
             "Type": "Clinical" if dept in clinical_departments else "Non-Clinical",
             "Admission Date": admission_date
         })
@@ -83,12 +98,13 @@ def generate_admin_data():
     return pd.DataFrame(records)
 
 # ----------------- Load Data -----------------
-patient_df = generate_patient_data()
+doctor_df = generate_doctor_data()
+patient_df = generate_patient_data(doctor_df=doctor_df)
 admin_df = generate_admin_data()
 
 # ----------------- Filters -----------------
 st.markdown("### 🔍 Filters")
-col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
+col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 3, 3])
 with col1:
     department_filter = st.multiselect("Department", all_medical_departments)
 with col2:
@@ -96,6 +112,8 @@ with col2:
 with col3:
     blood_filter = st.multiselect("Blood Group", patient_df["Blood Group"].unique())
 with col4:
+    doctor_filter = st.multiselect("Doctor", doctor_df["Doctor Name"].unique())
+with col5:
     search_term = st.text_input("Search (Name, Symptoms, Contact, etc.)")
 
 filtered = patient_df.copy()
@@ -105,6 +123,8 @@ if sex_filter:
     filtered = filtered[filtered["Sex"].isin(sex_filter)]
 if blood_filter:
     filtered = filtered[filtered["Blood Group"].isin(blood_filter)]
+if doctor_filter:
+    filtered = filtered[filtered["Doctor"].isin(doctor_filter)]
 if search_term:
     term = search_term.lower()
     filtered = filtered[filtered.apply(lambda r: term in str(r.values).lower(), axis=1)]
@@ -115,110 +135,13 @@ k1, k2, k3, k4 = st.columns(4)
 k1.metric("Total Patients", len(filtered))
 k2.metric("Clinical", (filtered['Type'] == 'Clinical').sum())
 k3.metric("Non-Clinical", (filtered['Type'] == 'Non-Clinical').sum())
-k4.metric("Admin Departments", len(admin_departments))
+k4.metric("Total Doctors", len(doctor_df))
 
-# ----------------- Patient Table -----------------
+# ----------------- Tables -----------------
 st.markdown("### 📋 Patient Info")
 st.dataframe(filtered, use_container_width=True)
 
-# ----------------- Visualizations -----------------
-st.markdown("### 📈 Distributions")
-c1, c2 = st.columns(2)
-
-# 1. Gender Distribution (Pie 3D style)
-with c1:
-    gender_data = filtered['Sex'].value_counts()
-    fig = go.Figure(data=[go.Pie(labels=gender_data.index, values=gender_data.values,
-                                 hole=0.3, pull=[0.05]*len(gender_data),
-                                 textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
-    fig.update_layout(title="Gender Distribution", template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-
-# 2. Department-wise Patients (Bar)
-with c2:
-    dept_counts = filtered["Department"].value_counts().reset_index()
-    dept_counts.columns = ["Department", "Count"]
-    fig = px.bar(dept_counts, x="Department", y="Count", color="Department",
-                 title="Patients by Department")
-    fig.update_layout(template="plotly_dark", xaxis_tickangle=-45)
-    st.plotly_chart(fig, use_container_width=True)
-
-# 3. Blood Group Pie (3D style)
-st.markdown("### 🩸 Blood Group Distribution")
-blood_counts = filtered["Blood Group"].value_counts().reset_index()
-blood_counts.columns = ["Blood Group", "Count"]
-fig = go.Figure(data=[go.Pie(labels=blood_counts['Blood Group'], values=blood_counts['Count'],
-                             hole=0.3, pull=[0.05]*len(blood_counts),
-                             textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
-fig.update_layout(title="Blood Group Share", template="plotly_dark")
-st.plotly_chart(fig, use_container_width=True)
-
-# 4. Monthly Admissions Line
-st.markdown("### 📅 Monthly Admissions")
-monthly = pd.to_datetime(filtered["Admission Date"]).dt.to_period("M").value_counts().sort_index()
-fig = px.line(x=monthly.index.astype(str), y=monthly.values, labels={"x": "Month", "y": "Admissions"})
-fig.update_layout(title="Monthly Patient Admissions", template="plotly_dark")
-st.plotly_chart(fig, use_container_width=True)
-
-# 5. Religion Donut (3D style)
-st.markdown("### 🛐 Religion-wise Patients")
-religion_counts = filtered["Religion"].value_counts().reset_index()
-religion_counts.columns = ["Religion", "Count"]
-fig = go.Figure(data=[go.Pie(labels=religion_counts['Religion'], values=religion_counts['Count'],
-                             hole=0.4, pull=[0.05]*len(religion_counts),
-                             textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
-fig.update_layout(title="Religion Breakdown", template="plotly_dark")
-st.plotly_chart(fig, use_container_width=True)
-
-# 6. Marital Status by Department (Stacked)
-st.markdown("### 💑 Marital Status per Department")
-ms_group = filtered.groupby(["Department", "Marital Status"]).size().reset_index(name="Count")
-fig = px.bar(ms_group, x="Department", y="Count", color="Marital Status", barmode="stack")
-fig.update_layout(title="Marital Status by Department", template="plotly_dark", xaxis_tickangle=-45)
-st.plotly_chart(fig, use_container_width=True)
-
-# 7. Heatmap
-st.markdown("### 🔥 Heatmap: Dept vs Blood Group")
-heat_df = pd.crosstab(filtered["Department"], filtered["Blood Group"])
-fig = px.imshow(heat_df, text_auto=True, color_continuous_scale='Greys', width=1800, height=600)
-fig.update_layout(title="Heatmap of Departments and Blood Groups", template="plotly_dark")
-st.plotly_chart(fig, use_container_width=True)
-
-# ----------------- Admin Tabs -----------------
-st.markdown("### 🗂️ Admin Department Overview")
-tabs = st.tabs(["Finance", "HR", "Insurance"])
-
-with tabs[0]:
-    st.subheader("💰 Finance")
-    df = admin_df.copy()
-    fig = px.line(df, x="Month", y="Finance Expense (in Lakh ₹)", color="Department", markers=True)
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-
-with tabs[1]:
-    st.subheader("👥 HR")
-    df = admin_df.copy()
-    fig = px.line(df, x="Month", y="HR Count", color="Department", markers=True)
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-
-with tabs[2]:
-    st.subheader("🛡️ Insurance")
-    df = admin_df.copy()
-    fig = px.line(df, x="Month", y="Insurance Claims Processed", color="Department", markers=True)
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-
-# ----------------- Admin Tables -----------------
-st.markdown("### 📄 Admin Department Data Tables")
-
-st.markdown("#### 💰 Finance Data Table")
-st.dataframe(admin_df[["Department", "Month", "Finance Expense (in Lakh ₹)"]], use_container_width=True)
-
-st.markdown("#### 👥 HR Data Table")
-st.dataframe(admin_df[["Department", "Month", "HR Count"]], use_container_width=True)
-
-st.markdown("#### 🛡️ Insurance Data Table")
-st.dataframe(admin_df[["Department", "Month", "Insurance Claims Processed"]], use_container_width=True)
+st.markdown("### 👨‍⚕️ Doctor Assignments")
+st.dataframe(doctor_df, use_container_width=True)
 
 # ----------------- END -----------------
