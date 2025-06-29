@@ -1,289 +1,139 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np # Import numpy to handle NA values
+import random
+from faker import Faker
 
-# ----------------- Page Setup -----------------
-st.set_page_config(page_title="🏥 Hospital Infrastructure Dashboard", layout="wide")
-st.title("🏥 Hospital Infrastructure Dashboard")
+# ----------------- Setup -----------------
+st.set_page_config(page_title="🏥 Medical College & Hospital Dashboard", layout="wide")
+st.title("🏥 Medical College & Hospital Dashboard")
 
-# ----------------- Dark Monochrome Theme -----------------
-st.markdown("""
-    <style>
-        body, .stApp {
-            background-color: #121212;
-            color: #E0E0E0;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        .stSelectbox, .stMultiselect, .stRadio, .stMetric, .stDownloadButton {
-            background-color: #1E1E1E;
-            color: #E0E0E0;
-        }
-        .stMetricLabel {
-            color: #AAAAAA !important;
-        }
-        .stButton>button {
-            background-color: #333333;
-            color: #FAFAFA;
-        }
-        .css-1d391kg {
-            background-color: #1E1E1E;
-            border-radius: 0.5rem;
-        }
-        .stDataFrame, .element-container {
-            color: #FAFAFA;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# ----------------- Initialize Faker -----------------
+fake = Faker()
 
-# ----------------- Load Data -----------------
-@st.cache_data
-def load_data():
-    # Use the raw GitHub URL for the CSV file to ensure correct parsing
-    csv_url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/469f2e286cfd500538a995721489daad0503dd1d/PMC%20Hospital%20Infrastructure.csv"
-    
-    # Load data from the attached CSV file, skipping bad lines
-    df = pd.read_csv(csv_url, encoding='latin1', on_bad_lines='skip')
+# ----------------- Configuration -----------------
+admin_departments = ['Hospital Admin - Finance', 'Hospital Admin - HR', 'Hospital Admin - Insurance',
+                     'College Admin - Finance', 'College Admin - HR']
 
-    # Step 1: Strip leading/trailing whitespace from all column names
-    df.columns = df.columns.str.strip()
+non_clinical_departments = [
+    "Pharmacology", "Lab Tests", "Biopsy", "Pathology", "Microbiology",
+    "Forensic", "Anatomy", "Physiology", "Biochemistry"
+]
 
-    # Step 2: Define a dictionary for renaming columns
-    # Keys are the exact column names after stripping, values are the desired new names
-    rename_mapping = {
-        'Type  (Hospital / Nursing Home / Lab)': 'Facility Type', 
-        'Class : (Public / Private)': 'Class (Public/Private)',
-        'Pharmacy Available : Yes/No': 'Pharmacy Available',
-        'Number of Beds in facility type': 'Number of Beds',
-        'Number of Doctors / Physicians': 'Number of Doctors',
-        'Number of Nurses': 'Number of Nurses',
-        'Number of Midwives Professional': 'Number of Midwives',
-        'Ambulance Service Available': 'Ambulance Service',
-        'Count of Ambulance': 'Ambulance Count',
-    }
+clinical_departments = [
+    "General Medicals", "General Surgery", "Orthopedics", "Dermatology",
+    "ENT", "Ophthalmology", "Psychiatrics", "Nephrology", "Cardiology",
+    "Neuro Surgery", "Plastic Surgery", "Medical Oncology",
+    "Surgical Oncology", "Gastroenterology Medical", "Gastroenterology Surgical"
+]
 
-    # Apply renaming to the DataFrame columns
-    df = df.rename(columns=rename_mapping)
+all_medical_departments = clinical_departments + non_clinical_departments
 
-    # Convert numerical columns, handling 'N.A.' and other non-numeric values
-    numerical_cols = [
-        'Number of Beds in Emergency Wards',
-        'Number of Beds',
-        'Number of Doctors',
-        'Number of Nurses',
-        'Number of Midwives',
-        'Average Monthly Patient Footfall',
-        'Ambulance Count'
-    ]
-    for col in numerical_cols:
-        # Ensure the column exists before attempting to convert it
-        if col in df.columns:
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace('N.A.', str(np.nan), regex=False),
-                errors='coerce'
-            ).fillna(0).astype(int)
-        else:
-            # This warning should ideally not be triggered with correct renaming
-            print(f"Warning: Column '{col}' not found in DataFrame for numerical conversion.")
+# ----------------- Generate Dummy Patient Data -----------------
+def generate_patient_data(n=500):
+    patients = []
+    for _ in range(n):
+        dept = random.choice(all_medical_departments)
+        patients.append({
+            "Patient ID": fake.unique.uuid4()[:8],
+            "Name": fake.name(),
+            "Sex": random.choice(["Male", "Female", "Other"]),
+            "Contact": fake.phone_number(),
+            "Marital Status": random.choice(["Married", "Single", "Divorced"]),
+            "Blood Group": random.choice(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]),
+            "Religion": random.choice(["Hindu", "Muslim", "Christian", "Other"]),
+            "Symptoms": fake.sentence(nb_words=6),
+            "Department": dept,
+            "Type": "Clinical" if dept in clinical_departments else "Non-Clinical"
+        })
+    return pd.DataFrame(patients)
 
-    return df
+# ----------------- Generate Dummy Admin Data -----------------
+def generate_admin_data():
+    records = []
+    for dept in admin_departments:
+        for month in range(1, 13):
+            records.append({
+                "Department": dept,
+                "Month": f"2025-{month:02d}",
+                "HR Count": random.randint(5, 25) if 'HR' in dept else None,
+                "Finance Expense (in Lakh ₹)": random.uniform(5.0, 20.0) if 'Finance' in dept else None,
+                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else None
+            })
+    return pd.DataFrame(records)
 
-df = load_data()
+# ----------------- Load Dummy Data -----------------
+patient_df = generate_patient_data()
+admin_df = generate_admin_data()
 
 # ----------------- Filters -----------------
-with st.container():
-    col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
-    with col1:
-        # Multiselect filter for Zone Name
-        zones = st.multiselect("Zone Name", sorted(df['Zone Name'].dropna().unique()))
-    with col2:
-        # Multiselect filter for Facility Type
-        facility_types = st.multiselect("Facility Type", sorted(df['Facility Type'].dropna().unique()))
-    with col3:
-        # Multiselect filter for Class (Public/Private)
-        classes = st.multiselect("Class", sorted(df['Class (Public/Private)'].dropna().unique()))
-    with col4:
-        # Radio button to select the metric for analysis in summary and bar charts
-        selected_metric = st.radio("Metric", [
-            "Number of Beds",
-            "Number of Doctors",
-            "Number of Nurses",
-            "Average Monthly Patient Footfall",
-            "Ambulance Count"
-        ], index=0, horizontal=True)
+st.sidebar.header("🔍 Filters")
+department_filter = st.sidebar.multiselect("Select Department", all_medical_departments)
+sex_filter = st.sidebar.multiselect("Select Gender", patient_df["Sex"].unique())
+blood_filter = st.sidebar.multiselect("Select Blood Group", patient_df["Blood Group"].unique())
 
-# ----------------- Optional Ward Name Slicer (if only one zone is selected) -----------------
-selected_ward = None
-if zones and len(zones) == 1:
-    # Get unique ward names for the selected zone
-    ward_options = df[df['Zone Name'] == zones[0]]['Ward Name'].dropna().unique()
-    # Provide a selectbox for Ward Name to narrow down facilities within a zone
-    selected_ward = st.selectbox(f"Ward Name for {zones[0]}", sorted(ward_options))
+filtered_patients = patient_df.copy()
+if department_filter:
+    filtered_patients = filtered_patients[filtered_patients["Department"].isin(department_filter)]
+if sex_filter:
+    filtered_patients = filtered_patients[filtered_patients["Sex"].isin(sex_filter)]
+if blood_filter:
+    filtered_patients = filtered_patients[filtered_patients["Blood Group"].isin(blood_filter)]
 
-# ----------------- Filtered Data -----------------
-# Create a copy of the DataFrame to apply filters
-filtered_df = df.copy()
-if zones:
-    filtered_df = filtered_df[filtered_df['Zone Name'].isin(zones)]
-if facility_types:
-    filtered_df = filtered_df[filtered_df['Facility Type'].isin(facility_types)]
-if classes:
-    filtered_df = filtered_df[filtered_df['Class (Public/Private)'].isin(classes)]
-if selected_ward:
-    filtered_df = filtered_df[filtered_df['Ward Name'] == selected_ward]
-
-# ----------------- Summary Metrics -----------------
-st.markdown("### 📌 Summary Metrics")
-# Display key performance indicators using Streamlit's metric function
+# ----------------- KPIs -----------------
+st.markdown("### 📊 Key Metrics")
 k1, k2, k3, k4 = st.columns(4)
 
 with k1:
-    # Total Number of Facilities after filtering
-    st.metric("🏥 Total Facilities", f"{filtered_df.shape[0]:,}")
+    st.metric("🧑‍🤝‍🧑 Total Patients", len(filtered_patients))
 with k2:
-    # Sum of 'Number of Beds' for filtered facilities
-    total_beds = filtered_df['Number of Beds'].sum()
-    st.metric("🛏️ Total Beds", f"{total_beds:,}")
+    st.metric("🧬 Clinical Patients", (filtered_patients['Type'] == 'Clinical').sum())
 with k3:
-    # Sum of 'Number of Doctors' for filtered facilities
-    total_doctors = filtered_df['Number of Doctors'].sum()
-    st.metric("👨‍⚕️ Total Doctors", f"{total_doctors:,}")
+    st.metric("🔬 Non-Clinical Patients", (filtered_patients['Type'] == 'Non-Clinical').sum())
 with k4:
-    # Sum of 'Average Monthly Patient Footfall' for filtered facilities
-    total_footfall = filtered_df['Average Monthly Patient Footfall'].sum()
-    st.metric("🚶‍♂️ Total Patient Footfall (Monthly)", f"{total_footfall:,}")
+    st.metric("🧾 Admin Departments", len(admin_departments))
 
-# ----------------- Download Button -----------------
-st.markdown("### 📥 Download Filtered Data")
-# Allow users to download the currently filtered dataset as a CSV
-csv = filtered_df.to_csv(index=False).encode("utf-8")
-st.download_button("Download CSV", csv, "filtered_hospital_data.csv", "text/csv")
+# ----------------- Patient Table -----------------
+st.markdown("### 📋 Patient Information")
+st.dataframe(filtered_patients, use_container_width=True)
 
-# ----------------- Raw Filtered Data Table -----------------
-st.markdown("### 📄 Filtered Data Table")
-# This expander now defaults to open (expanded=True) to immediately show the table
-with st.expander("🔍 View Raw Filtered Data", expanded=True):
-    st.dataframe(filtered_df, use_container_width=True)
+# ----------------- Patient Distribution -----------------
+st.markdown("### 📈 Patient Distribution")
+c1, c2 = st.columns(2)
 
-# ----------------- Bar Chart: Top Facilities by Selected Metric -----------------
-st.subheader(f"📊 Top 10 Facilities by {selected_metric}")
-# Group by 'Facility Name' and sum the selected metric, then get the top 10
-top_facilities = (
-    filtered_df.groupby('Facility Name')[selected_metric]
-    .sum().nlargest(10).reset_index().sort_values(by=selected_metric)
-)
+with c1:
+    sex_chart = px.pie(filtered_patients, names='Sex', title='Gender Distribution')
+    sex_chart.update_layout(template='plotly_dark')
+    st.plotly_chart(sex_chart, use_container_width=True)
 
-bar_fig = go.Figure(data=[
-    go.Bar(
-        x=top_facilities['Facility Name'],
-        y=top_facilities[selected_metric],
-        marker=dict(
-            color=top_facilities[selected_metric],
-            colorscale='Greys', # Use a monochrome color scale for consistent theme
-            showscale=True,
-            line=dict(color='white', width=1.2)
-        ),
-        hovertemplate='<b>%{x}</b><br>' + selected_metric + ': %{y:,f}<extra></extra>',
+with c2:
+    dept_chart = px.bar(
+        filtered_patients["Department"].value_counts().reset_index(),
+        x='index', y='Department',
+        labels={'index': 'Department', 'Department': 'Patient Count'},
+        title="Patients by Department",
+        color='Department'
     )
-])
-bar_fig.update_layout(
-    template='plotly_dark', # Use dark theme for the plot
-    xaxis_title="Facility Name",
-    yaxis_title=selected_metric,
-    height=500,
-    xaxis_tickangle=-45 # Angle x-axis labels for better readability on many labels
+    dept_chart.update_layout(template='plotly_dark', xaxis_tickangle=-45)
+    st.plotly_chart(dept_chart, use_container_width=True)
+
+# ----------------- Admin Department Overview -----------------
+st.markdown("### 🗂️ Admin Department Overview")
+st.dataframe(admin_df, use_container_width=True)
+
+# Metrics by type
+admin_metrics = st.selectbox("Select Admin Metric", ["HR Count", "Finance Expense (in Lakh ₹)", "Insurance Claims Processed"])
+metric_df = admin_df.dropna(subset=[admin_metrics])
+
+admin_metric_chart = px.line(
+    metric_df,
+    x="Month",
+    y=admin_metrics,
+    color="Department",
+    title=f"Monthly {admin_metrics}"
 )
-st.plotly_chart(bar_fig, use_container_width=True) # Display the bar chart
+admin_metric_chart.update_layout(template='plotly_dark')
+st.plotly_chart(admin_metric_chart, use_container_width=True)
 
-# ----------------- Table for Top Facilities -----------------
-st.markdown(f"### 📈 Table: Top 10 Facilities by {selected_metric}")
-# This expander now defaults to open (expanded=True) to immediately show the table
-with st.expander("🔍 View Top 10 Facilities Data", expanded=True):
-    st.dataframe(top_facilities, use_container_width=True)
-
-
-# ----------------- Pie Charts: Distribution by Facility Type & Class -----------------
-st.subheader("🧩 Distribution of Facilities by Type and Class")
-col_left, col_right = st.columns(2)
-
-with col_left:
-    # Distribution of facilities by type (e.g., Hospital, Dispensary, Lab)
-    facility_type_counts = filtered_df['Facility Type'].value_counts()
-    
-    # Calculate percentages for grouping
-    total_facilities = facility_type_counts.sum()
-    threshold = 0.02 * total_facilities # 2% threshold for 'Other' category
-
-    # Group small categories into 'Other'
-    main_types = facility_type_counts[facility_type_counts >= threshold]
-    other_count = facility_type_counts[facility_type_counts < threshold].sum()
-
-    if other_count > 0:
-        facility_type_distribution = pd.concat([main_types, pd.Series({'Other': other_count})]).reset_index()
-    else:
-        facility_type_distribution = main_types.reset_index()
-        
-    facility_type_distribution.columns = ['Facility Type', 'Count'] # Rename columns
-
-    # Determine pull for explosion effect on pie chart, emphasizing the largest slice
-    pulls_type = [0.1 if i == 0 else 0.05 for i in range(len(facility_type_distribution))]
-
-    pie_fig_type = go.Figure(data=[
-        go.Pie(
-            labels=facility_type_distribution['Facility Type'],
-            values=facility_type_distribution['Count'],
-            pull=pulls_type,
-            hole=0.2, # Creates a donut chart
-            marker=dict(
-                colors=px.colors.sequential.Greys, # Use a sequential monochrome palette for consistency
-                line=dict(color='white', width=1) # White border for slices
-            ),
-            textinfo='label+percent', # Display label and percentage on slices
-            hoverinfo='label+percent+value' # Display label, percentage, and value on hover
-        )
-    ])
-    pie_fig_type.update_layout(template='plotly_dark', height=700, title="Distribution by Facility Type")
-    st.plotly_chart(pie_fig_type, use_container_width=True) # Display the pie chart
-
-    # Table for Facility Type Distribution
-    st.markdown("### 📋 Table: Facility Type Distribution")
-    # This expander now defaults to open (expanded=True) to immediately show the table
-    with st.expander("🔍 View Facility Type Distribution Data", expanded=True):
-        st.dataframe(facility_type_distribution, use_container_width=True)
-
-
-with col_right:
-    # Distribution of facilities by class (Public/Private)
-    class_distribution = (
-        filtered_df['Class (Public/Private)'].value_counts().reset_index()
-    )
-    class_distribution.columns = ['Class (Public/Private)', 'Count'] # Rename columns
-
-    # Determine pull for explosion effect on pie chart, emphasizing the largest slice
-    pulls_class = [0.1 if i == 0 else 0.05 for i in range(len(class_distribution))]
-
-    pie_fig_class = go.Figure(data=[
-        go.Pie(
-            labels=class_distribution['Class (Public/Private)'],
-            values=class_distribution['Count'],
-            pull=pulls_class,
-            hole=0.2, # Creates a donut chart
-            marker=dict(
-                colors=px.colors.sequential.Greys[::-1], # Reversed sequential monochrome palette
-                line=dict(color='white', width=1) # White border for slices
-            ),
-            textinfo='label+percent', # Display label and percentage on slices
-            hoverinfo='label+percent+value' # Display label, percentage, and value on hover
-        )
-    ])
-    pie_fig_class.update_layout(template='plotly_dark', height=700, title="Distribution by Class (Public/Private)")
-    st.plotly_chart(pie_fig_class, use_container_width=True) # Display the pie chart
-
-    # Table for Class Distribution
-    st.markdown("### 📋 Table: Class Distribution")
-    # This expander now defaults to open (expanded=True) to immediately show the table
-    with st.expander("🔍 View Class Distribution Data", expanded=True):
-        st.dataframe(class_distribution, use_container_width=True)
-
-# No time-series charts as the dataset does not contain date/time information.
+# ----------------- End -----------------
