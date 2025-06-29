@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import random
 import os
 import sys
+import datetime
 
 # ----------------- Try Importing Faker -----------------
 try:
@@ -44,6 +45,7 @@ def generate_patient_data(n=500):
     patients = []
     for _ in range(n):
         dept = random.choice(all_medical_departments)
+        admission_date = datetime.date(2025, random.randint(1, 12), random.randint(1, 28))
         patients.append({
             "Patient ID": fake.unique.uuid4()[:8],
             "Name": fake.name(),
@@ -55,7 +57,7 @@ def generate_patient_data(n=500):
             "Symptoms": fake.sentence(nb_words=6),
             "Department": dept,
             "Type": "Clinical" if dept in clinical_departments else "Non-Clinical",
-            "Admission Date": fake.date_between(start_date='2025-01-01', end_date='2025-12-31')
+            "Admission Date": admission_date
         })
     return pd.DataFrame(patients)
 
