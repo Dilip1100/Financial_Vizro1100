@@ -55,8 +55,7 @@ def generate_patient_data(n=500):
             "Department": dept,
             "Type": "Clinical" if dept in clinical_departments else "Non-Clinical"
         })
-    df = pd.DataFrame(patients)
-    return df.dropna()
+    return pd.DataFrame(patients)
 
 # ----------------- Generate Dummy Admin Data -----------------
 def generate_admin_data():
@@ -66,12 +65,11 @@ def generate_admin_data():
             records.append({
                 "Department": dept,
                 "Month": f"2025-{month:02d}",
-                "HR Count": random.randint(5, 25) if 'HR' in dept else 0,
-                "Finance Expense (in Lakh ₹)": random.uniform(5.0, 20.0) if 'Finance' in dept else 0,
-                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else 0
+                "HR Count": random.randint(5, 25) if 'HR' in dept else random.randint(5, 25),
+                "Finance Expense (in Lakh ₹)": round(random.uniform(5.0, 20.0), 2) if 'Finance' in dept else round(random.uniform(5.0, 20.0), 2),
+                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else random.randint(10, 100)
             })
-    df = pd.DataFrame(records)
-    return df.dropna()
+    return pd.DataFrame(records)
 
 # ----------------- Load Dummy Data -----------------
 patient_df = generate_patient_data()
@@ -147,7 +145,7 @@ admin_tabs = st.tabs(["Finance", "HR", "Insurance"])
 
 with admin_tabs[0]:
     st.subheader("💰 Finance Overview")
-    finance_df = admin_df[admin_df["Finance Expense (in Lakh ₹)"] > 0]
+    finance_df = admin_df.copy()
     st.dataframe(finance_df, use_container_width=True)
     fig = px.line(finance_df, x="Month", y="Finance Expense (in Lakh ₹)", color="Department", title="Monthly Finance Expenses")
     fig.update_layout(template='plotly_dark')
@@ -155,7 +153,7 @@ with admin_tabs[0]:
 
 with admin_tabs[1]:
     st.subheader("👥 HR Overview")
-    hr_df = admin_df[admin_df["HR Count"] > 0]
+    hr_df = admin_df.copy()
     st.dataframe(hr_df, use_container_width=True)
     fig = px.line(hr_df, x="Month", y="HR Count", color="Department", title="Monthly HR Count")
     fig.update_layout(template='plotly_dark')
@@ -163,7 +161,7 @@ with admin_tabs[1]:
 
 with admin_tabs[2]:
     st.subheader("🛡️ Insurance Overview")
-    ins_df = admin_df[admin_df["Insurance Claims Processed"] > 0]
+    ins_df = admin_df.copy()
     st.dataframe(ins_df, use_container_width=True)
     fig = px.line(ins_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
     fig.update_layout(template='plotly_dark')
