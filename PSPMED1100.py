@@ -87,11 +87,16 @@ patient_df = generate_patient_data()
 admin_df = generate_admin_data()
 
 # ----------------- Filters -----------------
-st.sidebar.header("🔍 Filters")
-department_filter = st.sidebar.multiselect("Department", all_medical_departments)
-sex_filter = st.sidebar.multiselect("Gender", ["Male", "Female"])
-blood_filter = st.sidebar.multiselect("Blood Group", patient_df["Blood Group"].unique())
-search_term = st.sidebar.text_input("Search (Name, Symptoms, Contact, etc.)")
+st.markdown("### 🔍 Filters")
+col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
+with col1:
+    department_filter = st.multiselect("Department", all_medical_departments)
+with col2:
+    sex_filter = st.multiselect("Gender", ["Male", "Female"])
+with col3:
+    blood_filter = st.multiselect("Blood Group", patient_df["Blood Group"].unique())
+with col4:
+    search_term = st.text_input("Search (Name, Symptoms, Contact, etc.)")
 
 filtered = patient_df.copy()
 if department_filter:
@@ -175,9 +180,8 @@ st.plotly_chart(fig, use_container_width=True)
 # 7. Heatmap
 st.markdown("### 🔥 Heatmap: Dept vs Blood Group")
 heat_df = pd.crosstab(filtered["Department"], filtered["Blood Group"])
-fig = px.imshow(heat_df, text_auto=True, color_continuous_scale='Greys')
-fig.update_layout(title="Heatmap of Departments and Blood Groups", template="plotly_dark",
-                  autosize=True, width=1200, height=600)
+fig = px.imshow(heat_df, text_auto=True, color_continuous_scale='Greys', width=1800, height=600)
+fig.update_layout(title="Heatmap of Departments and Blood Groups", template="plotly_dark")
 st.plotly_chart(fig, use_container_width=True)
 
 # ----------------- Admin Tabs -----------------
