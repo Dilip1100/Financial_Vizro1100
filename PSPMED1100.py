@@ -3,7 +3,12 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import random
-from faker import Faker
+
+try:
+    from faker import Faker
+except ImportError:
+    st.error("Missing required library 'Faker'. Please install it by running 'pip install faker' in your terminal.")
+    st.stop()
 
 # ----------------- Setup -----------------
 st.set_page_config(page_title="🏥 Medical College & Hospital Dashboard", layout="wide")
