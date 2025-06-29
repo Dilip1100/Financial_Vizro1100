@@ -3,12 +3,15 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import random
+import os
+import sys
 
+# ----------------- Try Importing Faker -----------------
 try:
     from faker import Faker
 except ImportError:
-    st.error("Missing required library 'Faker'. Please install it by running 'pip install faker' in your terminal.")
-    st.stop()
+    os.system(f"{sys.executable} -m pip install faker")
+    from faker import Faker
 
 # ----------------- Setup -----------------
 st.set_page_config(page_title="🏥 Medical College & Hospital Dashboard", layout="wide")
@@ -72,11 +75,15 @@ def generate_admin_data():
 patient_df = generate_patient_data()
 admin_df = generate_admin_data()
 
-# ----------------- Filters -----------------
-st.sidebar.header("🔍 Filters")
-department_filter = st.sidebar.multiselect("Select Department", all_medical_departments)
-sex_filter = st.sidebar.multiselect("Select Gender", patient_df["Sex"].unique())
-blood_filter = st.sidebar.multiselect("Select Blood Group", patient_df["Blood Group"].unique())
+# ----------------- Top Filters -----------------
+st.markdown("### 🔍 Filters")
+colf1, colf2, colf3 = st.columns(3)
+with colf1:
+    department_filter = st.multiselect("Select Department", all_medical_departments)
+with colf2:
+    sex_filter = st.multiselect("Select Gender", patient_df["Sex"].unique())
+with colf3:
+    blood_filter = st.multiselect("Select Blood Group", patient_df["Blood Group"].unique())
 
 filtered_patients = patient_df.copy()
 if department_filter:
@@ -91,13 +98,13 @@ st.markdown("### 📊 Key Metrics")
 k1, k2, k3, k4 = st.columns(4)
 
 with k1:
-    st.metric("🧑‍🤝‍🧑 Total Patients", len(filtered_patients))
+    st.metric("🢑 Total Patients", len(filtered_patients))
 with k2:
     st.metric("🧬 Clinical Patients", (filtered_patients['Type'] == 'Clinical').sum())
 with k3:
     st.metric("🔬 Non-Clinical Patients", (filtered_patients['Type'] == 'Non-Clinical').sum())
 with k4:
-    st.metric("🧾 Admin Departments", len(admin_departments))
+    st.metric("📟 Admin Departments", len(admin_departments))
 
 # ----------------- Patient Table -----------------
 st.markdown("### 📋 Patient Information")
@@ -113,10 +120,11 @@ with c1:
     st.plotly_chart(sex_chart, use_container_width=True)
 
 with c2:
+    dept_counts = filtered_patients["Department"].value_counts().reset_index()
+    dept_counts.columns = ["Department", "Patient Count"]
     dept_chart = px.bar(
-        filtered_patients["Department"].value_counts().reset_index(),
-        x='index', y='Department',
-        labels={'index': 'Department', 'Department': 'Patient Count'},
+        dept_counts,
+        x='Department', y='Patient Count',
         title="Patients by Department",
         color='Department'
     )
@@ -125,20 +133,31 @@ with c2:
 
 # ----------------- Admin Department Overview -----------------
 st.markdown("### 🗂️ Admin Department Overview")
-st.dataframe(admin_df, use_container_width=True)
 
-# Metrics by type
-admin_metrics = st.selectbox("Select Admin Metric", ["HR Count", "Finance Expense (in Lakh ₹)", "Insurance Claims Processed"])
-metric_df = admin_df.dropna(subset=[admin_metrics])
+admin_tabs = st.tabs(["Finance", "HR", "Insurance"])
 
-admin_metric_chart = px.line(
-    metric_df,
-    x="Month",
-    y=admin_metrics,
-    color="Department",
-    title=f"Monthly {admin_metrics}"
-)
-admin_metric_chart.update_layout(template='plotly_dark')
-st.plotly_chart(admin_metric_chart, use_container_width=True)
+with admin_tabs[0]:
+    st.subheader("💰 Finance Overview")
+    finance_df = admin_df.dropna(subset=["Finance Expense (in Lakh ₹)"])
+    st.dataframe(finance_df, use_container_width=True)
+    fig = px.line(finance_df, x="Month", y="Finance Expense (in Lakh ₹)", color="Department", title="Monthly Finance Expenses")
+    fig.update_layout(template='plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
+
+with admin_tabs[1]:
+    st.subheader("👥 HR Overview")
+    hr_df = admin_df.dropna(subset=["HR Count"])
+    st.dataframe(hr_df, use_container_width=True)
+    fig = px.line(hr_df, x="Month", y="HR Count", color="Department", title="Monthly HR Count")
+    fig.update_layout(template='plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
+
+with admin_tabs[2]:
+    st.subheader("🛡️ Insurance Overview")
+    ins_df = admin_df.dropna(subset=["Insurance Claims Processed"])
+    st.dataframe(ins_df, use_container_width=True)
+    fig = px.line(ins_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
+    fig.update_layout(template='plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
 
 # ----------------- End -----------------
