@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import random
 import os
 import sys
@@ -65,9 +66,9 @@ def generate_admin_data():
             records.append({
                 "Department": dept,
                 "Month": f"2025-{month:02d}",
-                "HR Count": random.randint(5, 25) if 'HR' in dept else random.randint(5, 25),
-                "Finance Expense (in Lakh ₹)": round(random.uniform(5.0, 20.0), 2) if 'Finance' in dept else round(random.uniform(5.0, 20.0), 2),
-                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else random.randint(10, 100)
+                "HR Count": random.randint(5, 25),
+                "Finance Expense (in Lakh ₹)": round(random.uniform(5.0, 20.0), 2),
+                "Insurance Claims Processed": random.randint(10, 100)
             })
     return pd.DataFrame(records)
 
@@ -122,8 +123,21 @@ st.markdown("### 📈 Patient Distribution")
 c1, c2 = st.columns(2)
 
 with c1:
-    sex_chart = px.pie(filtered_patients, names='Sex', title='Gender Distribution')
-    sex_chart.update_layout(template='plotly_dark')
+    sex_counts = filtered_patients['Sex'].value_counts()
+    sex_chart = go.Figure(data=[
+        go.Pie(
+            labels=sex_counts.index,
+            values=sex_counts.values,
+            title='Gender Distribution',
+            hole=0.3,
+            pull=[0.05]*len(sex_counts),
+            hoverinfo='label+percent+value',
+            textinfo='label+percent',
+            marker=dict(line=dict(color='#000000', width=1)),
+            rotation=45
+        )
+    ])
+    sex_chart.update_layout(template='plotly_dark', scene=dict(camera=dict(eye=dict(x=1.5, y=1.5, z=1))))
     st.plotly_chart(sex_chart, use_container_width=True)
 
 with c2:
