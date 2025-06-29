@@ -55,7 +55,8 @@ def generate_patient_data(n=500):
             "Department": dept,
             "Type": "Clinical" if dept in clinical_departments else "Non-Clinical"
         })
-    return pd.DataFrame(patients)
+    df = pd.DataFrame(patients)
+    return df.dropna()
 
 # ----------------- Generate Dummy Admin Data -----------------
 def generate_admin_data():
@@ -65,11 +66,12 @@ def generate_admin_data():
             records.append({
                 "Department": dept,
                 "Month": f"2025-{month:02d}",
-                "HR Count": random.randint(5, 25) if 'HR' in dept else None,
-                "Finance Expense (in Lakh ₹)": random.uniform(5.0, 20.0) if 'Finance' in dept else None,
-                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else None
+                "HR Count": random.randint(5, 25) if 'HR' in dept else 0,
+                "Finance Expense (in Lakh ₹)": random.uniform(5.0, 20.0) if 'Finance' in dept else 0,
+                "Insurance Claims Processed": random.randint(10, 100) if 'Insurance' in dept else 0
             })
-    return pd.DataFrame(records)
+    df = pd.DataFrame(records)
+    return df.dropna()
 
 # ----------------- Load Dummy Data -----------------
 patient_df = generate_patient_data()
@@ -85,7 +87,7 @@ with colf2:
 with colf3:
     blood_filter = st.multiselect("Select Blood Group", patient_df["Blood Group"].unique())
 with colf4:
-    search_term = st.text_input("Search Patient Name")
+    search_term = st.text_input("Search Patients (Name, Symptoms, Contact, etc.)")
 
 filtered_patients = patient_df.copy()
 if department_filter:
@@ -95,7 +97,10 @@ if sex_filter:
 if blood_filter:
     filtered_patients = filtered_patients[filtered_patients["Blood Group"].isin(blood_filter)]
 if search_term:
-    filtered_patients = filtered_patients[filtered_patients["Name"].str.contains(search_term, case=False, na=False)]
+    search_term_lower = search_term.lower()
+    filtered_patients = filtered_patients[
+        filtered_patients.apply(lambda row: search_term_lower in str(row.values).lower(), axis=1)
+    ]
 
 # ----------------- KPIs -----------------
 st.markdown("### 📊 Key Metrics")
@@ -142,7 +147,7 @@ admin_tabs = st.tabs(["Finance", "HR", "Insurance"])
 
 with admin_tabs[0]:
     st.subheader("💰 Finance Overview")
-    finance_df = admin_df.dropna(subset=["Finance Expense (in Lakh ₹)"])
+    finance_df = admin_df[admin_df["Finance Expense (in Lakh ₹)"] > 0]
     st.dataframe(finance_df, use_container_width=True)
     fig = px.line(finance_df, x="Month", y="Finance Expense (in Lakh ₹)", color="Department", title="Monthly Finance Expenses")
     fig.update_layout(template='plotly_dark')
@@ -150,7 +155,7 @@ with admin_tabs[0]:
 
 with admin_tabs[1]:
     st.subheader("👥 HR Overview")
-    hr_df = admin_df.dropna(subset=["HR Count"])
+    hr_df = admin_df[admin_df["HR Count"] > 0]
     st.dataframe(hr_df, use_container_width=True)
     fig = px.line(hr_df, x="Month", y="HR Count", color="Department", title="Monthly HR Count")
     fig.update_layout(template='plotly_dark')
@@ -158,7 +163,7 @@ with admin_tabs[1]:
 
 with admin_tabs[2]:
     st.subheader("🛡️ Insurance Overview")
-    ins_df = admin_df.dropna(subset=["Insurance Claims Processed"])
+    ins_df = admin_df[admin_df["Insurance Claims Processed"] > 0]
     st.dataframe(ins_df, use_container_width=True)
     fig = px.line(ins_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
     fig.update_layout(template='plotly_dark')
