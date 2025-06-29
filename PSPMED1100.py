@@ -137,19 +137,30 @@ with c1:
             rotation=45
         )
     ])
-    sex_chart.update_layout(template='plotly_dark', scene=dict(camera=dict(eye=dict(x=1.5, y=1.5, z=1))))
+    sex_chart.update_layout(template='plotly_dark')
     st.plotly_chart(sex_chart, use_container_width=True)
 
 with c2:
     dept_counts = filtered_patients["Department"].value_counts().reset_index()
     dept_counts.columns = ["Department", "Patient Count"]
-    dept_chart = px.bar(
-        dept_counts,
-        x='Department', y='Patient Count',
+    dept_chart = go.Figure(data=[
+        go.Bar(
+            x=dept_counts["Department"],
+            y=dept_counts["Patient Count"],
+            marker=dict(color=dept_counts["Patient Count"], colorscale='Blues'),
+            hoverinfo='x+y',
+            text=dept_counts["Patient Count"],
+            textposition='auto'
+        )
+    ])
+    dept_chart.update_layout(
+        template='plotly_dark',
         title="Patients by Department",
-        color='Department'
+        xaxis_tickangle=-45,
+        xaxis_title="Department",
+        yaxis_title="Patient Count",
+        plot_bgcolor='rgba(0,0,0,0)'
     )
-    dept_chart.update_layout(template='plotly_dark', xaxis_tickangle=-45)
     st.plotly_chart(dept_chart, use_container_width=True)
 
 # ----------------- Admin Department Overview -----------------
@@ -161,24 +172,33 @@ with admin_tabs[0]:
     st.subheader("💰 Finance Overview")
     finance_df = admin_df.copy()
     st.dataframe(finance_df, use_container_width=True)
-    fig = px.line(finance_df, x="Month", y="Finance Expense (in Lakh ₹)", color="Department", title="Monthly Finance Expenses")
-    fig.update_layout(template='plotly_dark')
+    fig = go.Figure()
+    for dept in finance_df["Department"].unique():
+        df = finance_df[finance_df["Department"] == dept]
+        fig.add_trace(go.Scatter(x=df["Month"], y=df["Finance Expense (in Lakh ₹)"], mode='lines+markers', name=dept))
+    fig.update_layout(template='plotly_dark', title="Monthly Finance Expenses", xaxis_title="Month", yaxis_title="Expense (₹ Lakh)")
     st.plotly_chart(fig, use_container_width=True)
 
 with admin_tabs[1]:
     st.subheader("👥 HR Overview")
     hr_df = admin_df.copy()
     st.dataframe(hr_df, use_container_width=True)
-    fig = px.line(hr_df, x="Month", y="HR Count", color="Department", title="Monthly HR Count")
-    fig.update_layout(template='plotly_dark')
+    fig = go.Figure()
+    for dept in hr_df["Department"].unique():
+        df = hr_df[hr_df["Department"] == dept]
+        fig.add_trace(go.Scatter(x=df["Month"], y=df["HR Count"], mode='lines+markers', name=dept))
+    fig.update_layout(template='plotly_dark', title="Monthly HR Count", xaxis_title="Month", yaxis_title="HR Count")
     st.plotly_chart(fig, use_container_width=True)
 
 with admin_tabs[2]:
     st.subheader("🛡️ Insurance Overview")
     ins_df = admin_df.copy()
     st.dataframe(ins_df, use_container_width=True)
-    fig = px.line(ins_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
-    fig.update_layout(template='plotly_dark')
+    fig = go.Figure()
+    for dept in ins_df["Department"].unique():
+        df = ins_df[ins_df["Department"] == dept]
+        fig.add_trace(go.Scatter(x=df["Month"], y=df["Insurance Claims Processed"], mode='lines+markers', name=dept))
+    fig.update_layout(template='plotly_dark', title="Monthly Insurance Claims Processed", xaxis_title="Month", yaxis_title="Claims")
     st.plotly_chart(fig, use_container_width=True)
 
 # ----------------- End -----------------
