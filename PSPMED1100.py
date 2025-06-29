@@ -170,5 +170,20 @@ with tabs[2]:
     fig = px.line(admin_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
     fig.update_layout(template='plotly_dark')
     st.plotly_chart(fig, use_container_width=True)
+# ----------------- Admin Department Raw Tables -----------------
+st.markdown("### 📑 Raw Admin Tables")
+raw_tabs = st.tabs(["📄 Finance Table", "📄 HR Table", "📄 Insurance Table"])
+
+with raw_tabs[0]:
+    finance_table = admin_df[admin_df["Department"].str.contains("Finance")]
+    st.dataframe(finance_table, use_container_width=True)
+
+with raw_tabs[1]:
+    hr_table = admin_df[admin_df["Department"].str.contains("HR")]
+    st.dataframe(hr_table, use_container_width=True)
+
+with raw_tabs[2]:
+    insurance_table = admin_df[admin_df["Department"].str.contains("Insurance")]
+    st.dataframe(insurance_table, use_container_width=True)
 
 # ----------------- End -----------------
