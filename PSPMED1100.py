@@ -133,19 +133,38 @@ st.dataframe(filtered, use_container_width=True)
 st.markdown("### 👨‍⚕️ Doctor Assignments")
 st.dataframe(doctor_df, use_container_width=True)
 
-# ----------------- Patient Distribution -----------------
+# ----------------- Patient Distribution (3D Effect) -----------------
 st.markdown("### 📈 Patient Distribution")
 d1, d2 = st.columns(2)
+
 with d1:
-    pie = px.pie(filtered, names="Sex", title="Gender Distribution")
-    pie.update_layout(template="plotly_dark")
+    gender_counts = filtered["Sex"].value_counts()
+    pie = go.Figure(data=[go.Pie(
+        labels=gender_counts.index,
+        values=gender_counts.values,
+        hole=0.2,
+        pull=[0.05]*len(gender_counts),
+        marker=dict(line=dict(color='#000000', width=2))
+    )])
+    pie.update_layout(template="plotly_dark", title="Gender Distribution", showlegend=True)
     st.plotly_chart(pie, use_container_width=True)
 
 with d2:
     dept_counts = filtered["Department"].value_counts().reset_index()
     dept_counts.columns = ["Department", "Patient Count"]
-    bar = px.bar(dept_counts, x="Department", y="Patient Count", color="Department", title="Patients by Department")
-    bar.update_layout(template="plotly_dark", xaxis_tickangle=-45)
+    bar = go.Figure(data=[go.Bar(
+        x=dept_counts["Department"],
+        y=dept_counts["Patient Count"],
+        marker_color='lightskyblue',
+        marker_line=dict(color='rgb(8,48,107)', width=1.5),
+    )])
+    bar.update_traces(marker=dict(line=dict(width=1)), opacity=0.85)
+    bar.update_layout(
+        template="plotly_dark",
+        title="Patients by Department",
+        margin=dict(t=40),
+        xaxis_tickangle=-45
+    )
     st.plotly_chart(bar, use_container_width=True)
 
 # ----------------- Admin Department Overview -----------------
@@ -170,6 +189,7 @@ with tabs[2]:
     fig = px.line(admin_df, x="Month", y="Insurance Claims Processed", color="Department", title="Monthly Insurance Claims Processed")
     fig.update_layout(template='plotly_dark')
     st.plotly_chart(fig, use_container_width=True)
+
 # ----------------- Admin Department Raw Tables -----------------
 st.markdown("### 📑 Raw Admin Tables")
 raw_tabs = st.tabs(["📄 Finance Table", "📄 HR Table", "📄 Insurance Table"])
