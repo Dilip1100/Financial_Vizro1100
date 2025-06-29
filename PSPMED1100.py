@@ -125,7 +125,7 @@ with c1:
     gender_data = filtered['Sex'].value_counts()
     fig = go.Figure(data=[go.Pie(labels=gender_data.index, values=gender_data.values,
                                  hole=0.3, pull=[0.05]*len(gender_data),
-                                 textinfo='label+percent')])
+                                 textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
     fig.update_layout(title="Gender Distribution", template="plotly_dark")
     st.plotly_chart(fig, use_container_width=True)
 
@@ -138,12 +138,14 @@ with c2:
     fig.update_layout(template="plotly_dark", xaxis_tickangle=-45)
     st.plotly_chart(fig, use_container_width=True)
 
-# 3. Blood Group Pie
+# 3. Blood Group Pie (3D style)
 st.markdown("### 🩸 Blood Group Distribution")
 blood_counts = filtered["Blood Group"].value_counts().reset_index()
 blood_counts.columns = ["Blood Group", "Count"]
-fig = px.pie(blood_counts, names="Blood Group", values="Count", title="Blood Group Share")
-fig.update_layout(template="plotly_dark")
+fig = go.Figure(data=[go.Pie(labels=blood_counts['Blood Group'], values=blood_counts['Count'],
+                             hole=0.3, pull=[0.05]*len(blood_counts),
+                             textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
+fig.update_layout(title="Blood Group Share", template="plotly_dark")
 st.plotly_chart(fig, use_container_width=True)
 
 # 4. Monthly Admissions Line
@@ -153,11 +155,13 @@ fig = px.line(x=monthly.index.astype(str), y=monthly.values, labels={"x": "Month
 fig.update_layout(title="Monthly Patient Admissions", template="plotly_dark")
 st.plotly_chart(fig, use_container_width=True)
 
-# 5. Religion Donut
+# 5. Religion Donut (3D style)
 st.markdown("### 🛐 Religion-wise Patients")
 religion_counts = filtered["Religion"].value_counts().reset_index()
 religion_counts.columns = ["Religion", "Count"]
-fig = px.pie(religion_counts, names="Religion", values="Count", hole=0.4)
+fig = go.Figure(data=[go.Pie(labels=religion_counts['Religion'], values=religion_counts['Count'],
+                             hole=0.4, pull=[0.05]*len(religion_counts),
+                             textinfo='label+percent', marker=dict(line=dict(color='#000000', width=2)))])
 fig.update_layout(title="Religion Breakdown", template="plotly_dark")
 st.plotly_chart(fig, use_container_width=True)
 
