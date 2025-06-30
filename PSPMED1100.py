@@ -135,7 +135,7 @@ def generate_doctor_data(n=200):
 
 def generate_patient_data(n=1000, doctor_df=None):
     patients = []
-    for _ in range(n):
+    for i in range(n):
         dept = random.choice(all_medical_departments)
         assigned_doctors = doctor_df[doctor_df['Department'] == dept]
         doctor_name = assigned_doctors['Doctor Name'].sample(1).values[0] if not assigned_doctors.empty else "Unknown"
