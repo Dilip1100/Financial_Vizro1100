@@ -470,3 +470,4 @@ st.markdown("""
         <small style='color: #A9A9A9;'>© 2025 One Trust | Crafted for smarter auto-financial decisions</small>
     </center>
 """, unsafe_allow_html=True)
+
