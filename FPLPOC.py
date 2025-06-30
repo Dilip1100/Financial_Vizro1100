@@ -38,8 +38,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- Load Data (CSV + Mock) -----------------
-@st.cache_data
-
 def load_retail_csv():
     url = "https://raw.githubusercontent.com/Dilip1100/Financial_Vizro1100/94d364e98061cd58f8b52224f33037aa7ca3ed5f/DV2.csv"
     df = pd.read_csv(url, encoding='latin1')
@@ -52,8 +50,6 @@ def load_retail_csv():
     df['Quarter'] = df['Date'].dt.to_period('Q').astype(str)
     df['Month'] = df['Date'].dt.to_period('M').astype(str)
     return df
-
-@st.cache_data
 
 def load_mock_investment_data():
     np.random.seed(42)
@@ -70,12 +66,12 @@ def load_mock_investment_data():
         "Advisor": np.random.choice(advisors, 500),
         "Client": np.random.choice(clients, 500),
         "Investment Amount": np.random.randint(10000, 500000, 500),
-        "Returns": lambda x: x['Investment Amount'] * np.random.uniform(0.02, 0.12, 500),
         "Car Make": np.random.choice(car_makes, 500),
         "Car Model": np.random.choice(car_models, 500),
         "Car Year": np.random.choice(range(2015, 2024), 500),
         "Sale Price": np.random.randint(200000, 2000000, 500)
     })
+    df['Returns'] = df['Investment Amount'] * np.random.uniform(0.02, 0.12, size=len(df))
     df['Date'] = pd.to_datetime(df['Date'])
     df['Quarter'] = df['Date'].dt.to_period('Q').astype(str)
     df['Month'] = df['Date'].dt.to_period('M').astype(str)
