@@ -38,8 +38,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- Header -----------------
-st.image("https://fplonetrust.com/img/logo.webp", width=180)
-st.title("🚘  One Trust - Unified Automotive Dashboard")
+st.image("https://github.com/Dilip1100/Financial_Vizro1100/blob/ae39b71e4e436394fb71e0441690e6d7e59c37a7/LOGO.webp", width=180)
+st.title("Automotive Dashboard")
 
 # ----------------- Load Retail CSV Data -----------------
 @st.cache_data
