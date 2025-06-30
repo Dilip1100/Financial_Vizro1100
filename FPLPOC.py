@@ -1,4 +1,4 @@
-# Final Merged Script: FPL + CarDemo + Animated 3D View + All Components
+# Final Merged Script:  + CarDemo + Animated 3D View + All Components
 
 import streamlit as st
 import pandas as pd
@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # ----------------- Page Setup -----------------
-st.set_page_config(page_title="FPL One Trust Automotive Dashboard", layout="wide")
+st.set_page_config(page_title="Automotive Dashboard", layout="wide")
 st.markdown("""
     <style>
         body, .stApp {
@@ -39,7 +39,7 @@ st.markdown("""
 
 # ----------------- Header -----------------
 st.image("https://fplonetrust.com/img/logo.webp", width=180)
-st.title("🚘 FPL One Trust - Unified Automotive Dashboard")
+st.title("🚘  One Trust - Unified Automotive Dashboard")
 
 # ----------------- Load Retail CSV Data -----------------
 @st.cache_data
@@ -238,6 +238,6 @@ with tab3:
 st.markdown("""
     <hr style='border: 1px solid #333;'>
     <center>
-        <small>© 2025 FPL One Trust | Crafted for smarter auto-financial decisions</small>
+        <small>© 2025  One Trust | Crafted for smarter auto-financial decisions</small>
     </center>
 """, unsafe_allow_html=True)
