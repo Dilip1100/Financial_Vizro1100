@@ -222,6 +222,15 @@ with tab3:
         "Satisfaction Score": [round(x, 1) for x in np.random.uniform(1.0, 5.0, 10)]
     })
     st.dataframe(crm_data, use_container_width=True)
+
+    # Add line chart before box plot
+    st.markdown("#### 📊 Satisfaction Over Time")
+    line_chart_data = crm_data.copy()
+    line_chart_data["Contact Date"] = pd.to_datetime(line_chart_data["Contact Date"])
+    line_chart_data = line_chart_data.groupby("Contact Date")["Satisfaction Score"].mean().reset_index()
+    line_fig = px.line(line_chart_data, x="Contact Date", y="Satisfaction Score", markers=True, template="plotly_dark")
+    st.plotly_chart(line_fig, use_container_width=True)
+
     st.markdown("#### 😊 Satisfaction Score by Interaction Type")
     st.plotly_chart(px.box(crm_data, x="Interaction Type", y="Satisfaction Score", template="plotly_dark"), use_container_width=True)
 
