@@ -91,8 +91,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- Header -----------------
-st.image("https://github.com/Dilip1100/Financial_Vizro1100/blob/18a12404b6962363258f0078ae6f0d2a025c88bb/LOGO.jpg", width=180)
-st.title(" Automotive Analytics Dashboard")
+st.image("https://github.com/Dilip1100/Financial_Vizro1100/blob/ae39b71e4e436394fb71e0441690e6d7e59c37a7/LOGO.webp", width=180)
+st.title("🚗 Automotive Analytics Dashboard")
 st.markdown("Advanced insights for automotive sales and operations", unsafe_allow_html=True)
 
 # ----------------- Load Retail CSV Data -----------------
@@ -404,11 +404,11 @@ with tab3:
     )
     line_fig.update_layout(
         plot_bgcolor='#2A2A2A',
-        paper_bgвигcolor='#2A2A2A',
+        paper_bgcolor='#2A2A2A',
         font=dict(color='#D3D3D3')
     )
     st.plotly_chart(line_fig, use_container_width=True)
-    st.markdown("####  Satisfaction Score by Interaction Type")
+    st.markdown("#### 😊 Satisfaction Score by Interaction Type")
     st.plotly_chart(
         px.box(
             crm_data,
@@ -434,7 +434,7 @@ with tab4:
         "Preferred Make": [random.choice(df['Car Make'].dropna().unique()) for _ in range(20)]
     })
     st.dataframe(demo_data, use_container_width=True)
-    st.markdown("####  Age Group Distribution")
+    st.markdown("#### 🎂 Age Group Distribution")
     age_dist = px.histogram(
         demo_data,
         x="Age Group",
@@ -448,7 +448,7 @@ with tab4:
         font=dict(color='#D3D3D3')
     )
     st.plotly_chart(age_dist, use_container_width=True)
-    st.markdown("####  Purchase Amount by Region")
+    st.markdown("#### 💰 Purchase Amount by Region")
     region_purchase = px.box(
         demo_data,
         x="Region",
@@ -470,4 +470,3 @@ st.markdown("""
         <small style='color: #A9A9A9;'>© 2025 One Trust | Crafted for smarter auto-financial decisions</small>
     </center>
 """, unsafe_allow_html=True)
-
