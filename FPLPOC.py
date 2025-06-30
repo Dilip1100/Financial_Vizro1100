@@ -96,24 +96,24 @@ for col in ['Returns', 'Investment Amount', 'Commission Earned']:
 # ----------------- Filters -----------------
 st.sidebar.header("🔍 Filters")
 
-salespeople = st.sidebar.multiselect("Salesperson", sorted(retail_df['Salesperson'].dropna().unique()))
-car_makes = st.sidebar.multiselect("Car Make", sorted(full_df['Car Make'].dropna().unique()))
-car_years = st.sidebar.multiselect("Car Year", sorted(full_df['Car Year'].dropna().unique()))
-advisors = st.sidebar.multiselect("Advisor", sorted(invest_df['Advisor'].unique()))
-funds = st.sidebar.multiselect("Fund", sorted(invest_df['Fund'].unique()))
+salespeople = st.sidebar.multiselect("Salesperson", sorted(retail_df['Salesperson'].dropna().unique()) if 'Salesperson' in retail_df.columns else [])
+car_makes = st.sidebar.multiselect("Car Make", sorted(full_df['Car Make'].dropna().unique()) if 'Car Make' in full_df.columns else [])
+car_years = st.sidebar.multiselect("Car Year", sorted(full_df['Car Year'].dropna().unique()) if 'Car Year' in full_df.columns else [])
+advisors = st.sidebar.multiselect("Advisor", sorted(invest_df['Advisor'].unique()) if 'Advisor' in invest_df.columns else [])
+funds = st.sidebar.multiselect("Fund", sorted(invest_df['Fund'].unique()) if 'Fund' in invest_df.columns else [])
 metric = st.sidebar.radio("Metric", ["Sale Price", "Commission Earned", "Investment Amount", "Returns"], horizontal=True)
 
 # Apply filters
 filtered_df = full_df.copy()
-if salespeople:
+if salespeople and 'Salesperson' in filtered_df.columns:
     filtered_df = filtered_df[filtered_df['Salesperson'].isin(salespeople)]
 if car_makes:
     filtered_df = filtered_df[filtered_df['Car Make'].isin(car_makes)]
 if car_years:
     filtered_df = filtered_df[filtered_df['Car Year'].astype(str).isin(car_years)]
-if advisors:
+if advisors and 'Advisor' in filtered_df.columns:
     filtered_df = filtered_df[filtered_df['Advisor'].isin(advisors)]
-if funds:
+if funds and 'Fund' in filtered_df.columns:
     filtered_df = filtered_df[filtered_df['Fund'].isin(funds)]
 
 # ----------------- Metrics -----------------
@@ -131,21 +131,28 @@ with k4:
 # ----------------- Charts -----------------
 st.subheader(f"📊 Top 10 by {metric}")
 top_group = 'Salesperson' if metric in ["Sale Price", "Commission Earned"] else 'Advisor'
-top_data = filtered_df.groupby(top_group)[metric].sum().nlargest(10).reset_index()
-st.plotly_chart(px.bar(top_data, x=top_group, y=metric, template='plotly_dark'), use_container_width=True)
+if top_group in filtered_df.columns:
+    top_data = filtered_df.groupby(top_group)[metric].sum().nlargest(10).reset_index()
+    st.plotly_chart(px.bar(top_data, x=top_group, y=metric, template='plotly_dark'), use_container_width=True)
+else:
+    st.warning(f"'{top_group}' column not found in filtered data.")
 
 st.subheader("🚘 Top Car Makes and Models by Sale Price")
 col1, col2 = st.columns(2)
 with col1:
-    cmake = filtered_df.groupby('Car Make')['Sale Price'].sum().nlargest(10).reset_index()
-    st.plotly_chart(px.pie(cmake, names='Car Make', values='Sale Price', hole=0.3, template='plotly_dark'))
+    if 'Car Make' in filtered_df.columns:
+        cmake = filtered_df.groupby('Car Make')['Sale Price'].sum().nlargest(10).reset_index()
+        st.plotly_chart(px.pie(cmake, names='Car Make', values='Sale Price', hole=0.3, template='plotly_dark'))
 with col2:
-    cmodel = filtered_df.groupby('Car Model')['Sale Price'].sum().nlargest(10).reset_index()
-    st.plotly_chart(px.bar(cmodel, x='Car Model', y='Sale Price', template='plotly_dark'))
+    if 'Car Model' in filtered_df.columns:
+        cmodel = filtered_df.groupby('Car Model')['Sale Price'].sum().nlargest(10).reset_index()
+        st.plotly_chart(px.bar(cmodel, x='Car Model', y='Sale Price', template='plotly_dark'))
 
 st.subheader("📈 Quarterly Trends")
-trend_df = filtered_df.groupby('Quarter')[["Sale Price", "Commission Earned", "Investment Amount", "Returns"]].sum().reset_index()
-st.plotly_chart(px.line(trend_df, x='Quarter', y=trend_df.columns[1:], markers=True, template='plotly_dark'), use_container_width=True)
+trend_columns = [col for col in ["Sale Price", "Commission Earned", "Investment Amount", "Returns"] if col in filtered_df.columns]
+if 'Quarter' in filtered_df.columns and trend_columns:
+    trend_df = filtered_df.groupby('Quarter')[trend_columns].sum().reset_index()
+    st.plotly_chart(px.line(trend_df, x='Quarter', y=trend_columns, markers=True, template='plotly_dark'), use_container_width=True)
 
 # ----------------- Tabs -----------------
 st.markdown("---")
@@ -170,7 +177,7 @@ with tab2:
     inventory_data = pd.DataFrame({
         "Part ID": [f"P{i:03d}" for i in range(1, 11)],
         "Part Name": [f"Part {i}" for i in range(1, 11)],
-        "Car Make": np.random.choice(filtered_df['Car Make'].dropna().unique(), size=10),
+        "Car Make": np.random.choice(filtered_df['Car Make'].dropna().unique() if 'Car Make' in filtered_df.columns else ["Unknown"], size=10),
         "Stock Level": np.random.randint(0, 100, size=10),
         "Reorder Level": np.random.randint(10, 50, size=10),
         "Unit Cost": [round(x, 2) for x in np.random.uniform(50, 500, 10)]
@@ -186,7 +193,7 @@ with tab3:
         "Customer Name": [f"Customer {chr(65+i)}" for i in range(10)],
         "Contact Date": pd.date_range(end=pd.to_datetime("today"), periods=10),
         "Interaction Type": np.random.choice(["Inquiry", "Complaint", "Follow-up", "Feedback"], size=10),
-        "Salesperson": np.random.choice(retail_df['Salesperson'].dropna().unique(), size=10),
+        "Salesperson": np.random.choice(retail_df['Salesperson'].dropna().unique() if 'Salesperson' in retail_df.columns else ["Unknown"], size=10),
         "Satisfaction Score": [round(x, 1) for x in np.random.uniform(1.0, 5.0, 10)]
     })
     st.dataframe(crm_data, use_container_width=True)
