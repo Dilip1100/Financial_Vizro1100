@@ -88,6 +88,11 @@ invest_df['Source'] = 'Mock Investment'
 common_cols = list(set(retail_df.columns) & set(invest_df.columns))
 full_df = pd.concat([retail_df[common_cols], invest_df[common_cols]], ignore_index=True)
 
+# Ensure missing columns exist with default values
+for col in ['Returns', 'Investment Amount', 'Commission Earned']:
+    if col not in full_df.columns:
+        full_df[col] = 0
+
 # ----------------- Filters -----------------
 st.sidebar.header("🔍 Filters")
 
