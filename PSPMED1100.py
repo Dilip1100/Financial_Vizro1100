@@ -340,22 +340,48 @@ with tabs[0]:
 
 with tabs[1]:
     st.subheader("👥 HR Overview")
-    st.dataframe(admin_df[admin_df["Department"].str.contains("HR")], use_container_width=True)
-    fig = px.line(
-        admin_df[admin_df["Department"].str.contains("HR")],
-        x="Month",
-        y="HR Count",
-        color="Department",
-        title="Monthly HR Count",
-        color_discrete_sequence=['#A9A9A9', '#808080']
+
+    # HR Employee Table with Salary and Performance
+    hr_data = pd.DataFrame({
+        "Employee ID": [f"H{100+i}" for i in range(10)],
+        "Name": [fake.name() for _ in range(10)],
+        "Role": random.choices(["Admin", "Clerk", "Manager", "HR Specialist"], k=10),
+        "Department": [random.choice(["College Admin - HR", "Hospital Admin - HR"]) for _ in range(10)],
+        "Join Date": pd.date_range(start="2019-01-01", periods=10, freq="180D"),
+        "Salary (₹)": [random.randint(35000, 85000) for _ in range(10)],
+        "Performance Score": [round(random.uniform(2.5, 5.0), 1) for _ in range(10)]
+    })
+    st.markdown("#### 🧾 Employee Information & Salary")
+    st.dataframe(hr_data, use_container_width=True)
+
+    # Performance Distribution
+    st.markdown("#### 📈 Performance Distribution")
+    perf_fig = px.histogram(hr_data, x="Performance Score", nbins=5, template="plotly_dark")
+    st.plotly_chart(perf_fig, use_container_width=True)
+
+    # Employee Time Log Table
+    st.markdown("#### ⏱️ Employee Time Log")
+    time_log_data = pd.DataFrame({
+        "Employee ID": np.random.choice(hr_data["Employee ID"], size=30, replace=True),
+        "Date": pd.date_range(end=pd.to_datetime("today"), periods=30),
+        "Clock In": [f"{random.randint(8, 10)}:{str(random.randint(0, 59)).zfill(2)} AM" for _ in range(30)],
+        "Clock Out": [f"{random.randint(5, 6)+12}:{str(random.randint(0, 59)).zfill(2)} PM" for _ in range(30)],
+        "Total Hours": [round(random.uniform(6.5, 9.5), 1) for _ in range(30)]
+    }).sort_values(by="Date", ascending=False)
+    st.dataframe(time_log_data, use_container_width=True)
+
+    # Total Hours per Employee Chart
+    st.markdown("#### 📊 Total Logged Hours per Employee")
+    total_hours = time_log_data.groupby("Employee ID")["Total Hours"].sum().reset_index()
+    hour_fig = px.bar(
+        total_hours,
+        x="Employee ID",
+        y="Total Hours",
+        template="plotly_dark",
+        text_auto=True,
+        labels={"Total Hours": "Total Logged Hours"}
     )
-    fig.update_layout(
-        template='plotly_dark',
-        plot_bgcolor='#2A2A2A',
-        paper_bgcolor='#2A2A2A',
-        font=dict(color='#D3D3D3')
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(hour_fig, use_container_width=True)
 
 with tabs[2]:
     st.subheader("🛡️ Insurance Overview")
