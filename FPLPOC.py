@@ -338,31 +338,48 @@ tab1, tab2, tab3, tab4 = st.tabs(["👥 HR Overview", "📦 Inventory Status", "
 
 with tab1:
     st.subheader("👥 HR Overview")
+
+    # HR DataFrame with Salary
     hr_data = pd.DataFrame({
-        "Employee ID": [f"E{1000+i}" for i in range(20)],
-        "Name": [fake.name() for _ in range(20)],
-        "Role": [random.choice(["Sales Executive", "Sales Manager", "Service Technician", "Admin Clerk", "HR Specialist", "Finance Analyst"]) for _ in range(20)],
-        "Department": [random.choice(["Sales", "Service", "Admin", "HR", "Finance"]) for _ in range(20)],
-        "Join Date": [fake.date_between(start_date="-5y", end_date="today") for _ in range(20)],
-        "Salary": [random.randint(45000, 120000) for _ in range(20)],
-        "Performance Score": [round(random.uniform(2.5, 5.0), 1) for _ in range(20)]
+        "Employee ID": [f"E{1000+i}" for i in range(10)],
+        "Name": [f"Employee {i}" for i in range(1, 11)],
+        "Role": ["Sales Exec", "Manager", "Technician", "Clerk", "Sales Exec", "Technician", "HR", "Manager", "Clerk", "Sales Exec"],
+        "Department": ["Sales", "Sales", "Service", "Admin", "Sales", "Service", "HR", "Sales", "Admin", "Sales"],
+        "Join Date": pd.date_range(start="2018-01-01", periods=10, freq="180D"),
+        "Salary (USD)": [50000 + i*1500 for i in range(10)],
+        "Performance Score": [round(x, 1) for x in np.random.uniform(2.5, 5.0, 10)]
     })
+    st.markdown("#### 🧾 Employee Information & Salary")
     st.dataframe(hr_data, use_container_width=True)
+
+    # Performance Histogram
     st.markdown("#### 📈 Performance Distribution")
     st.plotly_chart(
-        px.histogram(
-            hr_data,
-            x="Performance Score",
-            nbins=10,
-            template="plotly_dark",
-            color_discrete_sequence=['#A9A9A9']
-        ).update_layout(
-            plot_bgcolor='#2A2A2A',
-            paper_bgcolor='#2A2A2A',
-            font=dict(color='#D3D3D3')
-        ),
+        px.histogram(hr_data, x="Performance Score", nbins=5, template="plotly_dark"),
         use_container_width=True
     )
+
+    # Time Log Data
+    st.markdown("#### ⏱️ Employee Time Log")
+    time_log_data = pd.DataFrame({
+        "Employee ID": np.random.choice(hr_data["Employee ID"], size=30, replace=True),
+        "Date": pd.date_range(end=pd.to_datetime("today"), periods=30).tolist(),
+        "Clock In": [f"{np.random.randint(8, 10)}:{str(np.random.randint(0, 60)).zfill(2)} AM" for _ in range(30)],
+        "Clock Out": [f"{np.random.randint(4, 6)+12}:{str(np.random.randint(0, 60)).zfill(2)} PM" for _ in range(30)],
+        "Total Hours": [round(np.random.uniform(6.5, 9.5), 1) for _ in range(30)]
+    }).sort_values(by="Date", ascending=False)
+    st.dataframe(time_log_data, use_container_width=True)
+
+    # Optional Visualization: Total Hours per Employee
+    st.markdown("#### 📊 Total Logged Hours per Employee")
+    total_hours = time_log_data.groupby("Employee ID")["Total Hours"].sum().reset_index()
+    bar_fig = px.bar(
+        total_hours, x="Employee ID", y="Total Hours",
+        template="plotly_dark", text_auto=True,
+        labels={"Total Hours": "Total Logged Hours"}
+    )
+    st.plotly_chart(bar_fig, use_container_width=True)
+
 
 with tab2:
     st.subheader("📦 Inventory Status")
